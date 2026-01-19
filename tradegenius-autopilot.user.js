@@ -55,12 +55,16 @@
     const r = s % 60;
     return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
   };
+  
+  // 检测操作系统工具函数
+  const isMacOS = () => navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   // ========= Swap Bot 變數 =========
   let isSwapRunning = false;
   let selectedFromToken = null;
   let loopPromise = null;
   let selectedChains = ['BNB']; // 默认选择BNB链
+  let isPanelCollapsed = false; // 面板折叠状态
 
   // ========= Auto Refresh 變數 =========
   let refreshEnabled = localStorage.getItem(REFRESH_CONFIG.KEY_ENABLED);
@@ -111,12 +115,16 @@
     refreshLeftEl: null,
     refreshBtnToggle: null,
     refreshBtnNow: null,
+    // Panel Collapse UI
+    collapseBtn: null,
+    mainContent: null,
 
     setSwapRunning(running) {
       if (!this.root) return;
       this.swapStatusDot.style.background = running ? '#16a34a' : '#dc2626';
       this.swapStatusText.textContent = running ? 'RUNNING' : 'STOPPED';
-      this.swapBtnToggle.textContent = running ? 'Stop (Ctrl+Alt+S)' : 'Start (Ctrl+Alt+S)';
+      const shortcut = isMacOS() ? '⌘⌥S' : 'Ctrl+Alt+S';
+      this.swapBtnToggle.textContent = running ? `Stop (${shortcut})` : `Start (${shortcut})`;
       this.swapBtnToggle.style.background = running ? '#dc2626' : '#16a34a';
     },
 
@@ -130,7 +138,8 @@
       const isOn = refreshEnabled;
       this.refreshDot.style.background = isOn ? '#16a34a' : '#dc2626';
       this.refreshStatus.textContent = isOn ? 'RUNNING' : 'PAUSED';
-      this.refreshBtnToggle.textContent = isOn ? 'Pause (Ctrl+Alt+R)' : 'Resume (Ctrl+Alt+R)';
+      const refreshShortcut = isMacOS() ? '⌘⌥R' : 'Ctrl+Alt+R';
+      this.refreshBtnToggle.textContent = isOn ? `Pause (${refreshShortcut})` : `Resume (${refreshShortcut})`;
       this.refreshBtnToggle.style.background = isOn ? '#dc2626' : '#16a34a';
 
       const at = nextAt ?? Number(localStorage.getItem(REFRESH_CONFIG.KEY_NEXT_AT) || 0);
@@ -174,6 +183,50 @@
         label.appendChild(span);
         this.chainCheckboxContainer.appendChild(label);
       });
+    },
+
+    togglePanel() {
+      if (!this.root || !this.mainContent) return;
+      
+      isPanelCollapsed = !isPanelCollapsed;
+      
+      if (isPanelCollapsed) {
+        // 折叠状态：只显示最小信息
+        this.mainContent.style.display = 'none';
+        this.root.style.width = '180px';
+        this.root.style.height = 'auto';
+        this.collapseBtn.textContent = '◀';
+        this.collapseBtn.style.background = '#059669';
+        
+        // 显示简要状态
+        const miniStatus = document.createElement('div');
+        miniStatus.id = 'mini-status';
+        miniStatus.style.cssText = `
+          padding: 8px 12px; text-align:center; font-size:11px; line-height:1.4;
+        `;
+        miniStatus.innerHTML = `
+          <div style="font-weight:700; margin-bottom:4px;">TradeGenius Bot</div>
+          <div style="opacity:.8;">Swap: ${this.swapStatusText?.textContent || 'STOPPED'}</div>
+          <div style="opacity:.8;">Refresh: ${this.refreshStatus?.textContent || 'PAUSED'}</div>
+          <div style="opacity:.6; font-size:10px; margin-top:4px;">按 T 展开</div>
+        `;
+        
+        // 移除旧的迷你状态（如果存在）
+        const oldMini = document.getElementById('mini-status');
+        if (oldMini) oldMini.remove();
+        
+        this.root.appendChild(miniStatus);
+      } else {
+        // 展开状态：显示完整内容
+        this.mainContent.style.display = 'block';
+        this.root.style.width = '300px';
+        this.collapseBtn.textContent = '▶';
+        this.collapseBtn.style.background = '#dc2626';
+        
+        // 移除迷你状态
+        const miniStatus = document.getElementById('mini-status');
+        if (miniStatus) miniStatus.remove();
+      }
     }
   };
 
@@ -188,6 +241,32 @@
       background: rgba(17,24,39,.92); color: #e5e7eb; backdrop-filter: blur(8px);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
     `;
+
+    // ========= 标题栏（包含折叠按钮） =========
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 8px 12px; display:flex; align-items:center; gap:8px;
+      background: rgba(0,0,0,.2); border-bottom: 1px solid rgba(255,255,255,.08);
+    `;
+
+    const title = document.createElement('div');
+    title.style.cssText = `font-weight:700; font-size:13px; flex:1;`;
+    title.textContent = 'TradeGenius AutoPilot';
+
+    const collapseBtn = document.createElement('button');
+    collapseBtn.textContent = '▶';
+    collapseBtn.style.cssText = `
+      border:0; cursor:pointer; color:white; padding:4px 6px; border-radius:6px;
+      background: #dc2626; font-weight:700; font-size:12px; width:24px; height:24px;
+      display:flex; align-items:center; justify-content:center;
+    `;
+
+    header.appendChild(title);
+    header.appendChild(collapseBtn);
+
+    // ========= 主要内容区域 =========
+    const mainContent = document.createElement('div');
+    mainContent.style.cssText = `display: block;`;
 
     // ========= Swap Bot Section =========
     const swapHeader = document.createElement('div');
@@ -211,7 +290,9 @@
     swapTitleWrap.appendChild(swapStatus);
 
     const swapBtn = document.createElement('button');
-    swapBtn.textContent = 'Start (Ctrl+Alt+S)';
+    // 检测操作系统显示正确的快捷键
+    const swapShortcut = isMacOS() ? 'Start (⌘⌥S)' : 'Start (Ctrl+Alt+S)';
+    swapBtn.textContent = swapShortcut;
     swapBtn.style.cssText = `
       margin-left:auto; border:0; cursor:pointer; color:white;
       background:#16a34a; padding:8px 10px; border-radius:10px;
@@ -315,7 +396,8 @@
       background:#dc2626; padding:8px 10px; border-radius:10px;
       font-weight:700; font-size:12px;
     `;
-    refreshBtnToggle.textContent = 'Pause (Ctrl+Alt+R)';
+    const refreshShortcut = isMacOS() ? '⌘⌥R' : 'Ctrl+Alt+R';
+    refreshBtnToggle.textContent = `Pause (${refreshShortcut})`;
 
     const refreshBtnNow = document.createElement('button');
     refreshBtnNow.style.cssText = `
@@ -327,7 +409,8 @@
 
     const refreshTip = document.createElement('div');
     refreshTip.style.cssText = `margin-top:10px; font-size:11px; opacity:.65; line-height:1.35;`;
-    refreshTip.textContent = `Interval: random ${REFRESH_CONFIG.MIN_MINUTES}–${REFRESH_CONFIG.MAX_MINUTES} minutes`;
+    const shortcuts = isMacOS() ? '⌘⌥S (Bot) ⌘⌥R (Refresh) T (Toggle)' : 'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T (Toggle)';
+    refreshTip.textContent = `快捷键: ${shortcuts} | 随机间隔: ${REFRESH_CONFIG.MIN_MINUTES}–${REFRESH_CONFIG.MAX_MINUTES}分钟`;
 
     refreshBtnRow.appendChild(refreshBtnToggle);
     refreshBtnRow.appendChild(refreshBtnNow);
@@ -337,11 +420,15 @@
     refreshBody.appendChild(refreshBtnRow);
     refreshBody.appendChild(refreshTip);
 
-    // ========= Assemble UI =========
-    root.appendChild(swapHeader);
-    root.appendChild(swapBody);
-    root.appendChild(refreshHeader);
-    root.appendChild(refreshBody);
+    // ========= Assemble Main Content =========
+    mainContent.appendChild(swapHeader);
+    mainContent.appendChild(swapBody);
+    mainContent.appendChild(refreshHeader);
+    mainContent.appendChild(refreshBody);
+
+    // ========= Assemble Full UI =========
+    root.appendChild(header);
+    root.appendChild(mainContent);
 
     document.body.appendChild(root);
 
@@ -357,6 +444,8 @@
     UI.refreshLeftEl = refreshLeft;
     UI.refreshBtnToggle = refreshBtnToggle;
     UI.refreshBtnNow = refreshBtnNow;
+    UI.collapseBtn = collapseBtn;
+    UI.mainContent = mainContent;
 
     UI.setSwapRunning(false);
     UI.renderChainSelection();
@@ -366,17 +455,35 @@
     swapBtn.addEventListener('click', toggleSwap);
     refreshBtnToggle.addEventListener('click', toggleRefresh);
     refreshBtnNow.addEventListener('click', () => doReload('manual'));
+    collapseBtn.addEventListener('click', UI.togglePanel);
+
+    // 检测操作系统
+    const isMac = isMacOS();
 
     window.addEventListener('keydown', (e) => {
-      // Ctrl + Alt + S: Toggle Swap Bot
-      if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'S')) {
+      // Ctrl/Cmd + Alt + S: Toggle Swap Bot
+      if ((isMac ? e.metaKey : e.ctrlKey) && e.altKey && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         toggleSwap();
       }
-      // Ctrl + Alt + R: Toggle Auto Refresh
-      if (e.ctrlKey && e.altKey && (e.key === 'r' || e.key === 'R')) {
+      // Ctrl/Cmd + Alt + R: Toggle Auto Refresh
+      if ((isMac ? e.metaKey : e.ctrlKey) && e.altKey && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
         toggleRefresh();
+      }
+      // T: Toggle Panel (仅当焦点不在输入框时)
+      if (e.key === 't' || e.key === 'T') {
+        const activeElement = document.activeElement;
+        const isInputFocused = activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' || 
+          activeElement.contentEditable === 'true'
+        );
+        
+        if (!isInputFocused) {
+          e.preventDefault();
+          UI.togglePanel();
+        }
       }
     });
   }
@@ -784,7 +891,8 @@
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
-    UI.logSwap(`Loaded. 选择链: ${selectedChains[0] || '未选择'}. Click Start or press Ctrl+Alt+S.`);
+    const shortcut = isMacOS() ? '⌘⌥S' : 'Ctrl+Alt+S';
+    UI.logSwap(`Loaded. 选择链: ${selectedChains[0] || '未选择'}. Click Start or press ${shortcut}.`);
   }
 
   if (document.readyState === 'loading') {
