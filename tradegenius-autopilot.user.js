@@ -59,13 +59,6 @@
   // 检测操作系统工具函数
   const isMacOS = () => navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
-  // 跟踪键盘状态用于Mac组合键
-  const keyState = {
-    metaPressed: false,
-    altPressed: false,
-    ctrlPressed: false
-  };
-
   // ========= Swap Bot 變數 =========
   let isSwapRunning = false;
   let selectedFromToken = null;
@@ -130,7 +123,7 @@
       if (!this.root) return;
       this.swapStatusDot.style.background = running ? '#16a34a' : '#dc2626';
       this.swapStatusText.textContent = running ? 'RUNNING' : 'STOPPED';
-      const shortcut = isMacOS() ? '⌘⌥S' : 'Ctrl+Alt+S';
+      const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
       this.swapBtnToggle.textContent = running ? `Stop (${shortcut})` : `Start (${shortcut})`;
       this.swapBtnToggle.style.background = running ? '#dc2626' : '#16a34a';
     },
@@ -145,7 +138,7 @@
       const isOn = refreshEnabled;
       this.refreshDot.style.background = isOn ? '#16a34a' : '#dc2626';
       this.refreshStatus.textContent = isOn ? 'RUNNING' : 'PAUSED';
-      const refreshShortcut = isMacOS() ? '⌘⌥R' : 'Ctrl+Alt+R';
+      const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
       this.refreshBtnToggle.textContent = isOn ? `Pause (${refreshShortcut})` : `Resume (${refreshShortcut})`;
       this.refreshBtnToggle.style.background = isOn ? '#dc2626' : '#16a34a';
 
@@ -229,7 +222,7 @@
             <div style="font-weight:700; margin-bottom:4px;">TradeGenius Bot</div>
             <div style="opacity:.8;">Swap: ${this.swapStatusText?.textContent || 'STOPPED'}</div>
             <div style="opacity:.8;">Refresh: ${this.refreshStatus?.textContent || 'PAUSED'}</div>
-            <div style="opacity:.6; font-size:10px; margin-top:4px;">按 T 展开</div>
+            <div style="opacity:.6; font-size:10px; margin-top:4px;">按 T/F3 展开</div>
           `;
           
           // 移除旧的迷你状态（如果存在）
@@ -319,7 +312,7 @@
 
     const swapBtn = document.createElement('button');
     // 检测操作系统显示正确的快捷键
-    const swapShortcut = isMacOS() ? 'Start (⌘⌥S/F1)' : 'Start (Ctrl+Alt+S)';
+    const swapShortcut = isMacOS() ? 'Start (F1)' : 'Start (Ctrl+Alt+S)';
     swapBtn.textContent = swapShortcut;
     swapBtn.style.cssText = `
       margin-left:auto; border:0; cursor:pointer; color:white;
@@ -424,7 +417,7 @@
       background:#dc2626; padding:8px 10px; border-radius:10px;
       font-weight:700; font-size:12px;
     `;
-    const refreshShortcut = isMacOS() ? '⌘⌥R' : 'Ctrl+Alt+R';
+    const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
     refreshBtnToggle.textContent = `Pause (${refreshShortcut})`;
 
     const refreshBtnNow = document.createElement('button');
@@ -438,8 +431,8 @@
     const refreshTip = document.createElement('div');
     refreshTip.style.cssText = `margin-top:10px; font-size:11px; opacity:.65; line-height:1.35;`;
     const shortcuts = isMacOS() ? 
-      '⌘⌥S/F1 (Bot) ⌘⌥R/F2 (Refresh) T/F3 (Toggle)' : 
-      'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T (Toggle)';
+      'F1 (Bot) F2 (Refresh) T/F3 (Toggle)' : 
+      'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T/F3 (Toggle)';
     refreshTip.textContent = `快捷键: ${shortcuts} | 随机间隔: ${REFRESH_CONFIG.MIN_MINUTES}–${REFRESH_CONFIG.MAX_MINUTES}分钟`;
 
     refreshBtnRow.appendChild(refreshBtnToggle);
@@ -502,56 +495,29 @@
     // 检测操作系统
     const isMac = isMacOS();
 
-    // 更新键盘状态
-    const updateKeyState = (e, isDown) => {
-      if (isMac) {
-        keyState.metaPressed = isDown && e.key === 'Meta' || (keyState.metaPressed && isDown);
-        keyState.altPressed = isDown && (e.key === 'Alt' || e.altKey);
-      } else {
-        keyState.ctrlPressed = isDown && e.ctrlKey;
-        keyState.altPressed = isDown && e.altKey;
-      }
-    };
-
     window.addEventListener('keydown', (e) => {
-      // 更新状态
-      updateKeyState(e, true);
-      
       // 调试信息
       console.log('Key down:', {
         key: e.key,
         metaKey: e.metaKey,
         ctrlKey: e.ctrlKey,
         altKey: e.altKey,
-        isMac: isMac,
-        state: { ...keyState }
+        isMac: isMac
       });
       
-      // Mac特殊处理：检查组合键状态
-      const isComboActive = isMac ? 
-        (keyState.metaPressed && keyState.altPressed) : 
-        (e.ctrlKey && e.altKey);
-      
-      // Ctrl/Cmd + Alt + S: Toggle Swap Bot
-      if (isComboActive && (e.key === 's' || e.key === 'S')) {
-        e.preventDefault();
-        console.log('Toggle swap bot triggered');
-        toggleSwap();
-        // 重置状态避免重复触发
-        if (isMac) {
-          keyState.metaPressed = false;
-          keyState.altPressed = false;
+      // PC用户：Ctrl + Alt 组合键
+      if (!isMac) {
+        // Ctrl + Alt + S: Toggle Swap Bot
+        if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'S')) {
+          e.preventDefault();
+          console.log('Toggle swap bot triggered');
+          toggleSwap();
         }
-      }
-      // Ctrl/Cmd + Alt + R: Toggle Auto Refresh
-      if (isComboActive && (e.key === 'r' || e.key === 'R')) {
-        e.preventDefault();
-        console.log('Toggle refresh triggered');
-        toggleRefresh();
-        // 重置状态避免重复触发
-        if (isMac) {
-          keyState.metaPressed = false;
-          keyState.altPressed = false;
+        // Ctrl + Alt + R: Toggle Auto Refresh
+        if (e.ctrlKey && e.altKey && (e.key === 'r' || e.key === 'R')) {
+          e.preventDefault();
+          console.log('Toggle refresh triggered');
+          toggleRefresh();
         }
       }
       // T: Toggle Panel (仅当焦点不在输入框时)
@@ -576,40 +542,25 @@
         }
       }
 
-      // 备用快捷键：F1-F3，适用于Mac用户
-      if (isMac) {
-        // F1: Toggle Swap Bot
-        if (e.key === 'F1') {
-          e.preventDefault();
-          console.log('F1: Toggle swap bot');
-          toggleSwap();
-        }
-        // F2: Toggle Refresh  
-        if (e.key === 'F2') {
-          e.preventDefault();
-          console.log('F2: Toggle refresh');
-          toggleRefresh();
-        }
-        // F3: Toggle Panel
-        if (e.key === 'F3') {
-          e.preventDefault();
-          console.log('F3: Toggle panel');
-          UI.togglePanel();
-        }
+      // F1-F3 快捷键（所有用户）
+      // F1: Toggle Swap Bot
+      if (e.key === 'F1') {
+        e.preventDefault();
+        console.log('F1: Toggle swap bot');
+        toggleSwap();
       }
-    });
-
-    // 监听按键释放来重置状态
-    window.addEventListener('keyup', (e) => {
-      updateKeyState(e, false);
-      
-      console.log('Key up:', {
-        key: e.key,
-        metaKey: e.metaKey,
-        ctrlKey: e.ctrlKey,
-        altKey: e.altKey,
-        state: { ...keyState }
-      });
+      // F2: Toggle Refresh  
+      if (e.key === 'F2') {
+        e.preventDefault();
+        console.log('F2: Toggle refresh');
+        toggleRefresh();
+      }
+      // F3: Toggle Panel
+      if (e.key === 'F3') {
+        e.preventDefault();
+        console.log('F3: Toggle panel');
+        UI.togglePanel();
+      }
     });
   }
 
@@ -1016,7 +967,7 @@
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
-    const shortcut = isMacOS() ? '⌘⌥S' : 'Ctrl+Alt+S';
+    const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
     UI.logSwap(`Loaded. 选择链: ${selectedChains[0] || '未选择'}. Click Start or press ${shortcut}.`);
   }
 
