@@ -1039,6 +1039,14 @@
       });
   }
 
+  function findSimulationFailedBtn() {
+    return Array.from(document.querySelectorAll('button'))
+      .find(b => {
+        const t = b.innerText.trim();
+        return t.includes("Simulation failed") && b.disabled;
+      });
+  }
+
   function findSwitchBtn() {
     const svg = document.querySelector('svg.lucide-arrow-up-down');
     return svg ? svg.closest('button') : document.querySelector('button[aria-label="Switch"]');
@@ -1293,8 +1301,27 @@
 
         await sleep(SWAP_CONFIG.waitAfterMax);
 
+        // 首先检查是否有Simulation failed错误
+        const simFailedBtn = findSimulationFailedBtn();
+        if (simFailedBtn) {
+          UI.logSwap("❌ 检测到 Simulation failed，执行页面刷新...");
+          await sleep(1000);
+          doReload('simulation_failed');
+          continue;
+        }
+
         let confirmClicked = false;
+        let simFailedDetected = false;
+        
         for (let i = 0; i < SWAP_CONFIG.maxRetryConfirm; i++) {
+          // 每次重试前检查Simulation failed
+          const simFailedCheck = findSimulationFailedBtn();
+          if (simFailedCheck) {
+            UI.logSwap("❌ Confirm重试期间检测到 Simulation failed，执行刷新...");
+            simFailedDetected = true;
+            break;
+          }
+          
           const btnConfirm = findConfirmBtn();
           if (btnConfirm && !btnConfirm.disabled) {
             btnConfirm.click();
@@ -1303,6 +1330,12 @@
             break;
           }
           await sleep(500);
+        }
+
+        if (simFailedDetected) {
+          await sleep(1000);
+          doReload('simulation_failed_retry');
+          continue;
         }
 
         if (confirmClicked) {
