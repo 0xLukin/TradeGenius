@@ -551,6 +551,15 @@
           const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
           let chainSelected = false;
 
+          // 收集所有可用链的名称
+          const availableChains = [];
+          chainOptions.forEach(opt => {
+            const chainName = opt.querySelector('span')?.innerText?.trim();
+            if (chainName) {
+              availableChains.push(chainName);
+            }
+          });
+
           // 尝试按优先级顺序选择用户配置的链
           for (const targetChain of selectedChains) {
             for (const opt of chainOptions) {
@@ -567,19 +576,24 @@
             }
           }
 
-          // 如果没有找到匹配的链，选择第一个可用链
-          if (!chainSelected && chainOptions.length > 0) {
-            chainOptions[0].click();
-            const fallbackChain = chainOptions[0].querySelector('span')?.innerText?.trim() || 'Unknown';
-            UI.logSwap(`⚠️ 未找到目标链，选择 ${symbol} (${fallbackChain}链)`);
-            return true;
+          // 如果没有找到匹配的链，显示详细错误信息并停止
+          if (!chainSelected) {
+            UI.logSwap(`❌ 未找到您选择的链`);
+            UI.logSwap(`📋 您选择的链: ${selectedChains.join(', ')}`);
+            UI.logSwap(`📋 可用链: ${availableChains.join(', ') || '无'}`);
+            UI.logSwap(`💡 请在控制面板中重新选择链或稍后重试`);
+            return false;
           }
+        } else {
+          // 如果没有链菜单，可能是单链代币或网络问题
+          UI.logSwap(`⚠️ 未检测到链选择菜单，可能 ${symbol} 只在单链可用`);
+          UI.logSwap(`❌ 请在控制面板中检查链配置或稍后重试`);
+          return false;
         }
 
-        // 如果没有链菜单，直接点击代币行
-        row.click();
-        UI.logSwap(`✅ Receive 直接选择了 ${symbol}`);
-        return true;
+        // 如果没有链菜单，说明有问题，不继续
+        UI.logSwap(`❌ 无法访问链选择菜单，操作终止`);
+        return false;
       }
     }
 
