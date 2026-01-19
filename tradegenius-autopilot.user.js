@@ -569,20 +569,20 @@
     authorInfo.innerHTML = `
       <div style="opacity: 0.9; color: #cbd5e1;">
         <div style="font-weight: 600; margin-bottom: 4px; color: #f1f5f9;">
-          <span style="opacity: 0.6;">作者：</span>伍壹51
+          <span style="opacity: 0.6;">维护者：</span>0xLuki
         </div>
         <div style="margin-bottom: 2px;">
           <span style="opacity: 0.6;">X:</span> 
-          <a href="https://x.com/0x515151" target="_blank" 
+          <a href="https://x.com/0xLuki" target="_blank" 
              style="color: #60a5fa; text-decoration: none; transition: color 0.2s;">
-             @0x515151
+             @0xLuki
           </a>
         </div>
         <div>
           <span style="opacity: 0.6;">TradeGenius:</span> 
-          <a href="https://www.tradegenius.com/ref/8C2TSF" target="_blank" 
+          <a href="https://www.tradegenius.com/ref/NA4QVP" target="_blank" 
              style="color: #60a5fa; text-decoration: none; transition: color 0.2s;">
-             直達鏈結
+             推荐链接
           </a>
         </div>
       </div>

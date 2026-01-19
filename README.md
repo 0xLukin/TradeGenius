@@ -11,7 +11,7 @@
 
 [⚡ 一键安装](#-安装) • [📖 使用指南](#-使用指南) • [🔧 配置选项](#-功能特色) • [🛡️ 安全说明](#-安全与免责)
 
-*原项目作者：[51 | Hunter Association](https://x.com/0x515151) • Fork by [0xLukin](https://github.com/0xLukin)*
+*原项目作者：[51 | Hunter Association](https://x.com/0x515151) • Fork by [0xLuki](https://github.com/0xLuki)*
 
 </div>
 
@@ -25,9 +25,11 @@
 | 🔄 | **自动交易循环** - 智能执行 MAX/Confirm 操作流程 |
 | ⏱️ | **随机延迟机制** - 模拟真实用户行为，避免检测 |
 | 🎛️ | **可视化控制面板** - 右下角实时状态显示与控制 |
-| ⌨️ | **快捷键支持** - `Ctrl+Alt+S` 快速启停 |
+| ⌨️ | **快捷键支持** - Mac: F1/F2/F3 | PC: Ctrl+Alt 组合键 |
 | 🔄 | **自动页面刷新** - 20-40分钟随机间隔刷新 |
 | 📊 | **详细日志记录** - 实时显示操作状态和错误信息 |
+| 🔗 | **链选择功能** - 支持 BNB/OP/SOL 三条链 |
+| 🎨 | **现代化UI** - 玻璃态设计，支持折叠面板 |
 
 ---
 
@@ -101,7 +103,7 @@
 
 1. **启动机器人**
    - 点击右下角控制面板的 "Start" 按钮
-   - 或使用快捷键 `Ctrl+Alt+S`
+   - Mac: 按 F1 | PC: 按 Ctrl+Alt+S
 
 2. **检查状态**
    - 状态指示器变为绿色表示正在运行
@@ -156,15 +158,17 @@ graph LR
 | 刷新间隔 | 20-40分钟 | 随机刷新时间范围 |
 | 交易延迟 | 12-25秒 | 交易间的随机等待时间 |
 | 最大重试 | 20次 | Confirm 按钮点击重试次数 |
-| 快捷键 | `Ctrl+Alt+S` | 启停快捷键 |
+| 快捷键 | Mac: F1/F2/F3 | PC: Ctrl+Alt+组合键 | 跨平台支持 |
 
 ### 🎛️ 控制面板功能
 
 - **状态指示器**：实时显示运行状态（绿色/红色）
-- **操作按钮**：Start/Stop 控制
+- **操作按钮**：Start/Stop 控制，支持渐变动效
+- **链选择**：可视化选择 BNB/OP/SOL 区块链
 - **日志窗口**：详细操作记录和错误信息
-- **刷新控制**：手动/自动页面刷新
-- **快捷方式**：快速访问平台功能
+- **刷新控制**：手动/自动页面刷新，状态卡片显示
+- **面板折叠**：可折叠设计，按 T/F3 切换
+- **现代化UI**：玻璃态设计，流畅动画效果
 
 ---
 
@@ -207,7 +211,7 @@ graph LR
 | 维护者 | 联系方式 |
 |--------|----------|
 | 原作者 | [51 | Hunter Association](https://x.com/0x515151) |
-| Fork维护 | [0xLukin](https://github.com/0xLukin) |
+| Fork维护 | [0xLuki](https://x.com/0xLuki) |
 
 ### 🎁 支持项目
 
@@ -226,6 +230,6 @@ graph LR
 
 **⭐ 如果这个项目对你有帮助，请给个 Star！**
 
-Made with ❤️ by [TradeGenius AutoPilot Community](https://github.com/0xLukin/TradeGenius/tree/hunter-maintenance)
+Made with ❤️ by [TradeGenius AutoPilot Community](https://github.com/0xLuki/TradeGenius/tree/hunter-maintenance)
 
 </div>
