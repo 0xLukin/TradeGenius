@@ -59,6 +59,13 @@
   // 检测操作系统工具函数
   const isMacOS = () => navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
+  // 跟踪键盘状态用于Mac组合键
+  const keyState = {
+    metaPressed: false,
+    altPressed: false,
+    ctrlPressed: false
+  };
+
   // ========= Swap Bot 變數 =========
   let isSwapRunning = false;
   let selectedFromToken = null;
@@ -312,7 +319,7 @@
 
     const swapBtn = document.createElement('button');
     // 检测操作系统显示正确的快捷键
-    const swapShortcut = isMacOS() ? 'Start (⌘⌥S)' : 'Start (Ctrl+Alt+S)';
+    const swapShortcut = isMacOS() ? 'Start (⌘⌥S/F1)' : 'Start (Ctrl+Alt+S)';
     swapBtn.textContent = swapShortcut;
     swapBtn.style.cssText = `
       margin-left:auto; border:0; cursor:pointer; color:white;
@@ -430,7 +437,9 @@
 
     const refreshTip = document.createElement('div');
     refreshTip.style.cssText = `margin-top:10px; font-size:11px; opacity:.65; line-height:1.35;`;
-    const shortcuts = isMacOS() ? '⌘⌥S (Bot) ⌘⌥R (Refresh) T (Toggle)' : 'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T (Toggle)';
+    const shortcuts = isMacOS() ? 
+      '⌘⌥S/F1 (Bot) ⌘⌥R/F2 (Refresh) T/F3 (Toggle)' : 
+      'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T (Toggle)';
     refreshTip.textContent = `快捷键: ${shortcuts} | 随机间隔: ${REFRESH_CONFIG.MIN_MINUTES}–${REFRESH_CONFIG.MAX_MINUTES}分钟`;
 
     refreshBtnRow.appendChild(refreshBtnToggle);
@@ -493,27 +502,57 @@
     // 检测操作系统
     const isMac = isMacOS();
 
+    // 更新键盘状态
+    const updateKeyState = (e, isDown) => {
+      if (isMac) {
+        keyState.metaPressed = isDown && e.key === 'Meta' || (keyState.metaPressed && isDown);
+        keyState.altPressed = isDown && (e.key === 'Alt' || e.altKey);
+      } else {
+        keyState.ctrlPressed = isDown && e.ctrlKey;
+        keyState.altPressed = isDown && e.altKey;
+      }
+    };
+
     window.addEventListener('keydown', (e) => {
+      // 更新状态
+      updateKeyState(e, true);
+      
       // 调试信息
-      console.log('Key pressed:', {
+      console.log('Key down:', {
         key: e.key,
         metaKey: e.metaKey,
         ctrlKey: e.ctrlKey,
         altKey: e.altKey,
-        isMac: isMac
+        isMac: isMac,
+        state: { ...keyState }
       });
       
+      // Mac特殊处理：检查组合键状态
+      const isComboActive = isMac ? 
+        (keyState.metaPressed && keyState.altPressed) : 
+        (e.ctrlKey && e.altKey);
+      
       // Ctrl/Cmd + Alt + S: Toggle Swap Bot
-      if ((isMac ? e.metaKey : e.ctrlKey) && e.altKey && (e.key === 's' || e.key === 'S')) {
+      if (isComboActive && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         console.log('Toggle swap bot triggered');
         toggleSwap();
+        // 重置状态避免重复触发
+        if (isMac) {
+          keyState.metaPressed = false;
+          keyState.altPressed = false;
+        }
       }
       // Ctrl/Cmd + Alt + R: Toggle Auto Refresh
-      if ((isMac ? e.metaKey : e.ctrlKey) && e.altKey && (e.key === 'r' || e.key === 'R')) {
+      if (isComboActive && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
         console.log('Toggle refresh triggered');
         toggleRefresh();
+        // 重置状态避免重复触发
+        if (isMac) {
+          keyState.metaPressed = false;
+          keyState.altPressed = false;
+        }
       }
       // T: Toggle Panel (仅当焦点不在输入框时)
       if (e.key === 't' || e.key === 'T') {
@@ -536,6 +575,41 @@
           }
         }
       }
+
+      // 备用快捷键：F1-F3，适用于Mac用户
+      if (isMac) {
+        // F1: Toggle Swap Bot
+        if (e.key === 'F1') {
+          e.preventDefault();
+          console.log('F1: Toggle swap bot');
+          toggleSwap();
+        }
+        // F2: Toggle Refresh  
+        if (e.key === 'F2') {
+          e.preventDefault();
+          console.log('F2: Toggle refresh');
+          toggleRefresh();
+        }
+        // F3: Toggle Panel
+        if (e.key === 'F3') {
+          e.preventDefault();
+          console.log('F3: Toggle panel');
+          UI.togglePanel();
+        }
+      }
+    });
+
+    // 监听按键释放来重置状态
+    window.addEventListener('keyup', (e) => {
+      updateKeyState(e, false);
+      
+      console.log('Key up:', {
+        key: e.key,
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        altKey: e.altKey,
+        state: { ...keyState }
+      });
     });
   }
 
