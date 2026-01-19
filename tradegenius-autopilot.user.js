@@ -70,7 +70,7 @@
 
   // ========= Chain Selection 配置 =========
   const CHAIN_CONFIG = {
-    KEY_SELECTED_CHAINS: 'tg_selected_chains',
+    KEY_SELECTED_CHAIN: 'tg_selected_chain',
     SUPPORTED_CHAINS: ['BNB', 'OP', 'SOL'],
     CHAIN_ALIASES: {
       'BNB': ['BNB', 'Binance', 'BNB Chain'],
@@ -81,19 +81,17 @@
 
   // 加载用户选择的链配置
   function loadChainConfig() {
-    const saved = localStorage.getItem(CHAIN_CONFIG.KEY_SELECTED_CHAINS);
-    if (saved) {
-      try {
-        selectedChains = JSON.parse(saved);
-      } catch (e) {
-        selectedChains = ['BNB']; // 解析失败时使用默认值
-      }
+    const saved = localStorage.getItem(CHAIN_CONFIG.KEY_SELECTED_CHAIN);
+    if (saved && CHAIN_CONFIG.SUPPORTED_CHAINS.includes(saved)) {
+      selectedChains = [saved]; // 单选，只保存一个链
+    } else {
+      selectedChains = ['BNB']; // 默认选择BNB链
     }
   }
 
   // 保存链配置
   function saveChainConfig() {
-    localStorage.setItem(CHAIN_CONFIG.KEY_SELECTED_CHAINS, JSON.stringify(selectedChains));
+    localStorage.setItem(CHAIN_CONFIG.KEY_SELECTED_CHAIN, selectedChains[0] || 'BNB');
   }
 
   // ========= 合併 UI 面板 =========
@@ -155,27 +153,24 @@
         const label = document.createElement('label');
         label.style.cssText = `display:flex; align-items:center; gap:6px; margin-bottom:4px; cursor:pointer; font-size:11px; opacity:.85;`;
         
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = selectedChains.includes(chain);
-        checkbox.style.cssText = `margin:0; cursor:pointer;`;
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'chain-selection'; // 单选必须有相同的name
+        radio.checked = selectedChains.includes(chain);
+        radio.style.cssText = `margin:0; cursor:pointer;`;
         
         const span = document.createElement('span');
         span.textContent = chain;
         
-        checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            if (!selectedChains.includes(chain)) {
-              selectedChains.push(chain);
-            }
-          } else {
-            selectedChains = selectedChains.filter(c => c !== chain);
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            selectedChains = [chain]; // 单选，只保存一个链
+            saveChainConfig();
+            UI.logSwap(`链配置更新: ${chain}`);
           }
-          saveChainConfig();
-          UI.logSwap(`链配置更新: ${selectedChains.join(', ')}`);
         });
         
-        label.appendChild(checkbox);
+        label.appendChild(radio);
         label.appendChild(span);
         this.chainCheckboxContainer.appendChild(label);
       });
@@ -517,7 +512,7 @@
 
     const targetToken = selectedFromToken === 'USDT' ? 'USDC' : 'USDT';
     UI.logSwap(`From 是 ${selectedFromToken}，Receive 选择 ${targetToken}`);
-    UI.logSwap(`目标链: ${selectedChains.join(', ')}`);
+    UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
 
     const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
     let stableTab = null;
@@ -560,8 +555,9 @@
             }
           });
 
-          // 尝试按优先级顺序选择用户配置的链
-          for (const targetChain of selectedChains) {
+          // 尝试选择用户配置的单个链
+          const targetChain = selectedChains[0]; // 单选，只取第一个
+          if (targetChain) {
             for (const opt of chainOptions) {
               const chainName = opt.querySelector('span')?.innerText?.trim();
               
@@ -579,7 +575,7 @@
           // 如果没有找到匹配的链，显示详细错误信息并停止
           if (!chainSelected) {
             UI.logSwap(`❌ 未找到您选择的链`);
-            UI.logSwap(`📋 您选择的链: ${selectedChains.join(', ')}`);
+            UI.logSwap(`📋 您选择的链: ${targetChain || '无'}`);
             UI.logSwap(`📋 可用链: ${availableChains.join(', ') || '无'}`);
             UI.logSwap(`💡 请在控制面板中重新选择链或稍后重试`);
             return false;
@@ -591,9 +587,7 @@
           return false;
         }
 
-        // 如果没有链菜单，说明有问题，不继续
-        UI.logSwap(`❌ 无法访问链选择菜单，操作终止`);
-        return false;
+
       }
     }
 
@@ -756,7 +750,7 @@
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
-    UI.logSwap(`Loaded. 选择链: ${selectedChains.join(', ')}. Click Start or press Ctrl+Alt+S.`);
+    UI.logSwap(`Loaded. 选择链: ${selectedChains[0] || '未选择'}. Click Start or press Ctrl+Alt+S.`);
   }
 
   if (document.readyState === 'loading') {
