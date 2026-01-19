@@ -472,6 +472,40 @@
   async function selectMaxBalanceToken() {
     await sleep(SWAP_CONFIG.waitAfterChoose);
 
+    const targetChain = selectedChains[0]; // 获取用户选择的链
+    if (!targetChain) {
+      UI.logSwap("❌ 未选择目标链，请先在控制面板选择链");
+      return false;
+    }
+
+    UI.logSwap(`目标链: ${targetChain}，开始查找 USDT/USDC`);
+
+    // 首先尝试点击 "All" 标签
+    const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
+    let allTab = null;
+    tabs.forEach(tab => {
+      if (tab.innerText.trim().toLowerCase() === 'all') allTab = tab;
+    });
+
+    if (allTab) {
+      allTab.click();
+      UI.logSwap("点击 All 标签");
+      await sleep(SWAP_CONFIG.waitAfterTabClick);
+    } else {
+      UI.logSwap("未找到 All 标签，尝试直接选择");
+    }
+
+    await sleep(300);
+
+    // 查找链标签
+    tabs.forEach(tab => {
+      if (tab.innerText.trim().toLowerCase() === targetChain.toLowerCase()) {
+        tab.click();
+        UI.logSwap(`点击 ${targetChain} 标签`);
+      }
+    });
+    await sleep(SWAP_CONFIG.waitAfterTabClick);
+
     const tokenRows = document.querySelectorAll('[role="dialog"] .cursor-pointer');
     let maxBalance = -1;
     let targetRow = null;
@@ -499,11 +533,11 @@
     if (targetRow) {
       targetRow.click();
       selectedFromToken = targetSymbol;
-      UI.logSwap(`✅ From 选择了 ${targetSymbol} (余额: ${maxBalance})`);
+      UI.logSwap(`✅ From 选择了 ${targetSymbol} (${targetChain}链, 余额: ${maxBalance})`);
       return true;
     }
 
-    UI.logSwap("⚠️ 未找到 USDT/USDC");
+    UI.logSwap(`⚠️ 在 ${targetChain} 链上未找到 USDT/USDC`);
     return false;
   }
 
