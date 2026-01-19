@@ -186,46 +186,67 @@
     },
 
     togglePanel() {
-      if (!this.root || !this.mainContent) return;
+      console.log('togglePanel called, UI elements:', {
+        root: !!this.root,
+        mainContent: !!this.mainContent,
+        collapseBtn: !!this.collapseBtn,
+        currentCollapsed: isPanelCollapsed
+      });
+      
+      if (!this.root || !this.mainContent) {
+        console.error('Missing UI elements for panel toggle');
+        return;
+      }
       
       isPanelCollapsed = !isPanelCollapsed;
+      console.log('New collapsed state:', isPanelCollapsed);
       
-      if (isPanelCollapsed) {
-        // 折叠状态：只显示最小信息
-        this.mainContent.style.display = 'none';
-        this.root.style.width = '180px';
-        this.root.style.height = 'auto';
-        this.collapseBtn.textContent = '◀';
-        this.collapseBtn.style.background = '#059669';
-        
-        // 显示简要状态
-        const miniStatus = document.createElement('div');
-        miniStatus.id = 'mini-status';
-        miniStatus.style.cssText = `
-          padding: 8px 12px; text-align:center; font-size:11px; line-height:1.4;
-        `;
-        miniStatus.innerHTML = `
-          <div style="font-weight:700; margin-bottom:4px;">TradeGenius Bot</div>
-          <div style="opacity:.8;">Swap: ${this.swapStatusText?.textContent || 'STOPPED'}</div>
-          <div style="opacity:.8;">Refresh: ${this.refreshStatus?.textContent || 'PAUSED'}</div>
-          <div style="opacity:.6; font-size:10px; margin-top:4px;">按 T 展开</div>
-        `;
-        
-        // 移除旧的迷你状态（如果存在）
-        const oldMini = document.getElementById('mini-status');
-        if (oldMini) oldMini.remove();
-        
-        this.root.appendChild(miniStatus);
-      } else {
-        // 展开状态：显示完整内容
-        this.mainContent.style.display = 'block';
-        this.root.style.width = '300px';
-        this.collapseBtn.textContent = '▶';
-        this.collapseBtn.style.background = '#dc2626';
-        
-        // 移除迷你状态
-        const miniStatus = document.getElementById('mini-status');
-        if (miniStatus) miniStatus.remove();
+      try {
+        if (isPanelCollapsed) {
+          // 折叠状态：只显示最小信息
+          this.mainContent.style.display = 'none';
+          this.root.style.width = '180px';
+          this.root.style.height = 'auto';
+          if (this.collapseBtn) {
+            this.collapseBtn.textContent = '◀';
+            this.collapseBtn.style.background = '#059669';
+          }
+          
+          // 显示简要状态
+          const miniStatus = document.createElement('div');
+          miniStatus.id = 'mini-status';
+          miniStatus.style.cssText = `
+            padding: 8px 12px; text-align:center; font-size:11px; line-height:1.4;
+          `;
+          miniStatus.innerHTML = `
+            <div style="font-weight:700; margin-bottom:4px;">TradeGenius Bot</div>
+            <div style="opacity:.8;">Swap: ${this.swapStatusText?.textContent || 'STOPPED'}</div>
+            <div style="opacity:.8;">Refresh: ${this.refreshStatus?.textContent || 'PAUSED'}</div>
+            <div style="opacity:.6; font-size:10px; margin-top:4px;">按 T 展开</div>
+          `;
+          
+          // 移除旧的迷你状态（如果存在）
+          const oldMini = document.getElementById('mini-status');
+          if (oldMini) oldMini.remove();
+          
+          this.root.appendChild(miniStatus);
+          console.log('Panel collapsed successfully');
+        } else {
+          // 展开状态：显示完整内容
+          this.mainContent.style.display = 'block';
+          this.root.style.width = '300px';
+          if (this.collapseBtn) {
+            this.collapseBtn.textContent = '▶';
+            this.collapseBtn.style.background = '#dc2626';
+          }
+          
+          // 移除迷你状态
+          const miniStatus = document.getElementById('mini-status');
+          if (miniStatus) miniStatus.remove();
+          console.log('Panel expanded successfully');
+        }
+      } catch (error) {
+        console.error('Error during panel toggle:', error);
       }
     }
   };
@@ -451,24 +472,47 @@
     UI.renderChainSelection();
     UI.renderRefresh();
 
+    // 调试：检查UI元素
+    console.log('UI Elements created:', {
+      root: !!root,
+      mainContent: !!mainContent,
+      header: !!header,
+      collapseBtn: !!collapseBtn,
+      swapBtn: !!swapBtn
+    });
+
     // ========= Event Listeners =========
     swapBtn.addEventListener('click', toggleSwap);
     refreshBtnToggle.addEventListener('click', toggleRefresh);
     refreshBtnNow.addEventListener('click', () => doReload('manual'));
-    collapseBtn.addEventListener('click', UI.togglePanel);
+    collapseBtn.addEventListener('click', () => {
+      console.log('Collapse button clicked');
+      UI.togglePanel();
+    });
 
     // 检测操作系统
     const isMac = isMacOS();
 
     window.addEventListener('keydown', (e) => {
+      // 调试信息
+      console.log('Key pressed:', {
+        key: e.key,
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        altKey: e.altKey,
+        isMac: isMac
+      });
+      
       // Ctrl/Cmd + Alt + S: Toggle Swap Bot
       if ((isMac ? e.metaKey : e.ctrlKey) && e.altKey && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
+        console.log('Toggle swap bot triggered');
         toggleSwap();
       }
       // Ctrl/Cmd + Alt + R: Toggle Auto Refresh
       if ((isMac ? e.metaKey : e.ctrlKey) && e.altKey && (e.key === 'r' || e.key === 'R')) {
         e.preventDefault();
+        console.log('Toggle refresh triggered');
         toggleRefresh();
       }
       // T: Toggle Panel (仅当焦点不在输入框时)
@@ -480,9 +524,16 @@
           activeElement.contentEditable === 'true'
         );
         
+        console.log('T key pressed, inputFocused:', isInputFocused);
+        
         if (!isInputFocused) {
           e.preventDefault();
-          UI.togglePanel();
+          try {
+            console.log('Toggle panel triggered');
+            UI.togglePanel();
+          } catch (error) {
+            console.error('Toggle panel error:', error);
+          }
         }
       }
     });
