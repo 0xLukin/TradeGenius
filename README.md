@@ -11,7 +11,7 @@
 
 [⚡ 一键安装](#-安装) • [📖 使用指南](#-使用指南) • [🔧 配置选项](#-功能特色) • [🛡️ 安全说明](#-安全与免责)
 
-*原项目作者：[51 | Hunter Association](https://x.com/0x515151) • Fork by [0xLuki](https://github.com/0xLuki)*
+*原项目作者：[51 | Hunter Association](https://x.com/0x515151) • Fork by [0xluki](https://github.com/0xLukin)*
 
 </div>
 
@@ -211,7 +211,7 @@ graph LR
 | 维护者 | 联系方式 |
 |--------|----------|
 | 原作者 | [51 | Hunter Association](https://x.com/0x515151) |
-| Fork维护 | [0xLuki](https://x.com/0xLuki) |
+| Fork维护 | [0xluki](https://github.com/0xLukin) |
 
 ### 🎁 支持项目
 
@@ -230,6 +230,6 @@ graph LR
 
 **⭐ 如果这个项目对你有帮助，请给个 Star！**
 
-Made with ❤️ by [TradeGenius AutoPilot Community](https://github.com/0xLuki/TradeGenius/tree/hunter-maintenance)
+Made with ❤️ by [TradeGenius AutoPilot Community](https://github.com/0xLukin/TradeGenius/tree/hunter-maintenance)
 
 </div>

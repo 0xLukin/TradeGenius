@@ -569,13 +569,20 @@
     authorInfo.innerHTML = `
       <div style="opacity: 0.9; color: #cbd5e1;">
         <div style="font-weight: 600; margin-bottom: 4px; color: #f1f5f9;">
-          <span style="opacity: 0.6;">维护者：</span>0xLuki
+          <span style="opacity: 0.6;">维护者：</span>0xluki
         </div>
         <div style="margin-bottom: 2px;">
           <span style="opacity: 0.6;">X:</span> 
           <a href="https://x.com/0xLuki" target="_blank" 
              style="color: #60a5fa; text-decoration: none; transition: color 0.2s;">
              @0xLuki
+          </a>
+        </div>
+        <div>
+          <span style="opacity: 0.6;">GitHub:</span> 
+          <a href="https://github.com/0xLukin" target="_blank" 
+             style="color: #60a5fa; text-decoration: none; transition: color 0.2s;">
+             @0xLukin
           </a>
         </div>
         <div>
