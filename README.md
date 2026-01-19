@@ -3,7 +3,7 @@
 # TradeGenius AutoPilot
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-2.0.0-green.svg)](https://github.com/0xLukin/TradeGenius-AutoPilot)
+[![Version](https://img.shields.io/badge/Version-2.0.0-green.svg)](https://github.com/0xLukin/TradeGenius)
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey-orange.svg)](https://www.tampermonkey.net/)
 
 **🤖 智能自动化交易机器人**  
@@ -44,26 +44,87 @@
 <details>
 <summary><strong>📦 详细安装指南</strong></summary>
 
-1. **安装 Tampermonkey 扩展**
-   ```bash
-   # Chrome Web Store
-   https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo
-   ```
+#### 第一步：安装 Tampermonkey 扩展
 
-2. **安装用户脚本**
-   ```bash
-   # 一键安装链接
-   https://install.tampermonkey.net/?url=https://raw.githubusercontent.com/0xLukin/TradeGenius-AutoPilot/main/tradegenius-autopilot.user.js
-   ```
+**Chrome / Edge 用户：**
+- 访问 Chrome Web Store：[Tampermonkey 扩展](https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+- 点击 "添加到浏览器" 并完成安装
 
-3. **访问交易平台**
+**Firefox 用户：**
+- 访问 Firefox Add-ons：[Tampermonkey 扩展](https://addons.mozilla.org/firefox/addon/tampermonkey/)
+- 点击 "添加到 Firefox" 并完成安装
+
+**Safari 用户：**
+- 需要先安装 [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) 扩展
+- 再安装 [Tampermonkey](https://www.tampermonkey.net/?browser=safari) (仅 macOS)
+
+#### 第二步：安装用户脚本
+
+**方法一：一键安装（推荐）**
+1. 点击以下链接直接安装：
+   ```bash
+   https://install.tampermonkey.net/?url=https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js
+   ```
+2. 在弹出的 Tampermonkey 安装页面中，点击 "安装"
+
+**方法二：手动安装**
+1. 下载脚本文件：[tradegenius-autopilot.user.js](https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js)
+2. 点击浏览器工具栏中的 Tampermonkey 图标
+3. 选择 "创建新脚本"
+4. 删除默认内容，粘贴下载的脚本代码
+5. 按 `Ctrl+S` 保存脚本
+
+**方法三：GitHub 下载**
+1. 访问项目仓库：[https://github.com/0xLukin/TradeGenius](https://github.com/0xLukin/TradeGenius)
+2. 下载 `tradegenius-autopilot.user.js` 文件
+3. 按照方法二手动安装
+
+#### 第三步：验证安装
+
+1. **检查脚本状态**
+   - 点击 Tampermonkey 图标
+   - 确认 "TradeGenius AutoPilot" 脚本已启用
+
+2. **访问交易平台**
    ```
    https://www.tradegenius.com/trade
    ```
+   - 正常情况下，页面右下角会显示控制面板
+   - 如果没有显示，检查脚本是否启用
 
-4. **启动机器人**
+#### 第四步：开始使用
+
+1. **启动机器人**
    - 点击右下角控制面板的 "Start" 按钮
    - 或使用快捷键 `Ctrl+Alt+S`
+
+2. **检查状态**
+   - 状态指示器变为绿色表示正在运行
+   - 日志窗口会显示操作记录
+
+</details>
+
+<details>
+<summary><strong>🔍 故障排除</strong></summary>
+
+#### 脚本未加载
+- 检查 Tampermonkey 是否启用
+- 确认脚本在正确的网站运行（tradegenius.com）
+- 刷新页面后重试
+
+#### 控制面板不显示
+- 按 `Ctrl+Alt+S` 强制显示
+- 检查浏览器控制台是否有错误
+- 确认页面加载完成后再尝试
+
+#### 功能异常
+- 查看控制面板日志窗口的错误信息
+- 确认网络连接正常
+- 重新启动脚本
+
+#### 权限问题
+- 确保脚本有 "GM_setValue" 和 "GM_getValue" 权限
+- 在 Tampermonkey 设置中允许访问页面数据
 
 </details>
 
