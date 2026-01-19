@@ -121,11 +121,33 @@
 
     setSwapRunning(running) {
       if (!this.root) return;
-      this.swapStatusDot.style.background = running ? '#16a34a' : '#dc2626';
-      this.swapStatusText.textContent = running ? 'RUNNING' : 'STOPPED';
-      const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
-      this.swapBtnToggle.textContent = running ? `Stop (${shortcut})` : `Start (${shortcut})`;
-      this.swapBtnToggle.style.background = running ? '#dc2626' : '#16a34a';
+      
+      // 更新状态点
+      if (this.swapStatusDot) {
+        const color = running ? '#16a34a' : '#dc2626';
+        this.swapStatusDot.style.background = color;
+        this.swapStatusDot.style.boxShadow = `0 0 10px ${color}80`;
+      }
+      
+      // 更新状态文本
+      if (this.swapStatusText) {
+        this.swapStatusText.textContent = running ? 'RUNNING' : 'STOPPED';
+        this.swapStatusText.style.color = running ? '#22c55e' : '#ef4444';
+      }
+      
+      // 更新按钮
+      if (this.swapBtnToggle) {
+        const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
+        this.swapBtnToggle.textContent = running ? `Stop (${shortcut})` : `Start (${shortcut})`;
+        
+        if (running) {
+          this.swapBtnToggle.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
+          this.swapBtnToggle.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+        } else {
+          this.swapBtnToggle.style.background = 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)';
+          this.swapBtnToggle.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
+        }
+      }
     },
 
     logSwap(msg) {
@@ -136,51 +158,126 @@
 
     renderRefresh(nextAt) {
       const isOn = refreshEnabled;
-      this.refreshDot.style.background = isOn ? '#16a34a' : '#dc2626';
-      this.refreshStatus.textContent = isOn ? 'RUNNING' : 'PAUSED';
-      const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
-      this.refreshBtnToggle.textContent = isOn ? `Pause (${refreshShortcut})` : `Resume (${refreshShortcut})`;
-      this.refreshBtnToggle.style.background = isOn ? '#dc2626' : '#16a34a';
+      
+      // 更新状态点
+      if (this.refreshDot) {
+        const color = isOn ? '#16a34a' : '#dc2626';
+        this.refreshDot.style.background = color;
+        this.refreshDot.style.boxShadow = `0 0 10px ${color}80`;
+      }
+      
+      // 更新状态文本
+      if (this.refreshStatus) {
+        this.refreshStatus.textContent = isOn ? 'RUNNING' : 'PAUSED';
+        this.refreshStatus.style.color = isOn ? '#22c55e' : '#ef4444';
+      }
+      
+      // 更新按钮
+      if (this.refreshBtnToggle) {
+        const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
+        this.refreshBtnToggle.textContent = isOn ? `Pause (${refreshShortcut})` : `Resume (${refreshShortcut})`;
+        
+        if (isOn) {
+          this.refreshBtnToggle.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
+          this.refreshBtnToggle.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+        } else {
+          this.refreshBtnToggle.style.background = 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)';
+          this.refreshBtnToggle.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
+        }
+      }
 
       const at = nextAt ?? Number(localStorage.getItem(REFRESH_CONFIG.KEY_NEXT_AT) || 0);
-      this.refreshNextEl.textContent = at ? `Next: ${fmtTime(at)}` : 'Next: -';
+      
+      // 更新状态卡片
+      if (this.refreshNextEl) {
+        const nextElement = this.refreshNextEl.querySelector('div:last-child');
+        if (nextElement) {
+          nextElement.textContent = at ? fmtTime(at) : 'Next: -';
+        }
+      }
 
       const leftMs = at ? (at - Date.now()) : 0;
-      this.refreshLeftEl.textContent = at ? `Left: ${fmtLeft(leftMs)}` : 'Left: -';
+      if (this.refreshLeftEl) {
+        const leftElement = this.refreshLeftEl.querySelector('div:last-child');
+        if (leftElement) {
+          leftElement.textContent = at ? fmtLeft(leftMs) : 'Left: -';
+        }
+      }
     },
 
     renderChainSelection() {
       if (!this.chainCheckboxContainer) return;
       
       this.chainCheckboxContainer.innerHTML = '';
-      const title = document.createElement('div');
-      title.style.cssText = `font-size:11px; font-weight:700; margin-bottom:6px; opacity:.9;`;
-      title.textContent = '选择区块链：';
-      this.chainCheckboxContainer.appendChild(title);
 
       CHAIN_CONFIG.SUPPORTED_CHAINS.forEach(chain => {
         const label = document.createElement('label');
-        label.style.cssText = `display:flex; align-items:center; gap:6px; margin-bottom:4px; cursor:pointer; font-size:11px; opacity:.85;`;
+        label.style.cssText = `
+          display: inline-flex; align-items: center; gap: 6px; 
+          cursor: pointer; padding: 6px 12px; border-radius: 6px;
+          background: ${selectedChains.includes(chain) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0, 0, 0, 0.3)'};
+          border: 1px solid ${selectedChains.includes(chain) ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255, 255, 255, 0.1)'};
+          transition: all 0.2s ease; font-size: 11px; font-weight: 500;
+          color: ${selectedChains.includes(chain) ? '#f1f5f9' : '#94a3b8'};
+        `;
         
         const radio = document.createElement('input');
         radio.type = 'radio';
         radio.name = 'chain-selection'; // 单选必须有相同的name
         radio.checked = selectedChains.includes(chain);
-        radio.style.cssText = `margin:0; cursor:pointer;`;
+        radio.style.cssText = `margin:0; cursor:pointer; opacity: 0; position: absolute;`;
         
         const span = document.createElement('span');
-        span.textContent = chain;
+        span.style.cssText = `
+          display: flex; align-items: center; gap: 4px;
+        `;
+        
+        // 添加链图标
+        const chainIcon = document.createElement('span');
+        const iconColors = {
+          'BNB': '#f59e0b',
+          'OP': '#ef4444', 
+          'SOL': '#8b5cf6'
+        };
+        chainIcon.style.cssText = `
+          width: 8px; height: 8px; border-radius: 50%; 
+          background: ${iconColors[chain] || '#94a3b8'};
+          box-shadow: 0 0 6px ${iconColors[chain] || '#94a3b8'}40;
+        `;
+        
+        const chainText = document.createElement('span');
+        chainText.textContent = chain;
+        
+        span.appendChild(chainIcon);
+        span.appendChild(chainText);
+        
+        label.appendChild(radio);
+        label.appendChild(span);
+        
+        // 悬停效果
+        label.addEventListener('mouseenter', () => {
+          if (!selectedChains.includes(chain)) {
+            label.style.background = 'rgba(0, 0, 0, 0.4)';
+            label.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }
+        });
+        label.addEventListener('mouseleave', () => {
+          if (!selectedChains.includes(chain)) {
+            label.style.background = 'rgba(0, 0, 0, 0.3)';
+            label.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          }
+        });
         
         radio.addEventListener('change', () => {
           if (radio.checked) {
             selectedChains = [chain]; // 单选，只保存一个链
             saveChainConfig();
             UI.logSwap(`链配置更新: ${chain}`);
+            // 重新渲染所有链选项以更新选中状态
+            this.renderChainSelection();
           }
         });
         
-        label.appendChild(radio);
-        label.appendChild(span);
         this.chainCheckboxContainer.appendChild(label);
       });
     },
@@ -202,49 +299,70 @@
       console.log('New collapsed state:', isPanelCollapsed);
       
       try {
-        if (isPanelCollapsed) {
-          // 折叠状态：只显示最小信息
-          this.mainContent.style.display = 'none';
-          this.root.style.width = '180px';
-          this.root.style.height = 'auto';
-          if (this.collapseBtn) {
-            this.collapseBtn.textContent = '◀';
-            this.collapseBtn.style.background = '#059669';
-          }
-          
-          // 显示简要状态
-          const miniStatus = document.createElement('div');
-          miniStatus.id = 'mini-status';
-          miniStatus.style.cssText = `
-            padding: 8px 12px; text-align:center; font-size:11px; line-height:1.4;
-          `;
-          miniStatus.innerHTML = `
-            <div style="font-weight:700; margin-bottom:4px;">TradeGenius Bot</div>
-            <div style="opacity:.8;">Swap: ${this.swapStatusText?.textContent || 'STOPPED'}</div>
-            <div style="opacity:.8;">Refresh: ${this.refreshStatus?.textContent || 'PAUSED'}</div>
-            <div style="opacity:.6; font-size:10px; margin-top:4px;">按 T/F3 展开</div>
-          `;
-          
-          // 移除旧的迷你状态（如果存在）
-          const oldMini = document.getElementById('mini-status');
-          if (oldMini) oldMini.remove();
-          
-          this.root.appendChild(miniStatus);
-          console.log('Panel collapsed successfully');
-        } else {
-          // 展开状态：显示完整内容
-          this.mainContent.style.display = 'block';
-          this.root.style.width = '300px';
-          if (this.collapseBtn) {
-            this.collapseBtn.textContent = '▶';
-            this.collapseBtn.style.background = '#dc2626';
-          }
-          
-          // 移除迷你状态
-          const miniStatus = document.getElementById('mini-status');
-          if (miniStatus) miniStatus.remove();
-          console.log('Panel expanded successfully');
+      if (isPanelCollapsed) {
+        // 折叠状态：只显示最小信息
+        this.mainContent.style.display = 'none';
+        this.root.style.width = '200px';
+        this.root.style.height = 'auto';
+        if (this.collapseBtn) {
+          this.collapseBtn.textContent = '◀';
+          this.collapseBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+          this.collapseBtn.style.color = '#10b981';
         }
+        
+        // 显示简要状态
+        const miniStatus = document.createElement('div');
+        miniStatus.id = 'mini-status';
+        miniStatus.style.cssText = `
+          padding: 12px 16px; text-align:center; font-size:10px; line-height:1.4;
+          background: rgba(0,0,0,0.2);
+        `;
+        
+        const swapStatus = this.swapStatusText?.textContent || 'STOPPED';
+        const swapColor = swapStatus === 'RUNNING' ? '#22c55e' : '#ef4444';
+        const refreshStatus = this.refreshStatus?.textContent || 'PAUSED';
+        const refreshColor = refreshStatus === 'RUNNING' ? '#22c55e' : '#ef4444';
+        
+        miniStatus.innerHTML = `
+          <div style="font-weight:600; margin-bottom:8px; color: #f1f5f9; font-size:11px;">
+            TradeGenius Bot
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:8px;">
+            <div style="background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 6px;">
+              <div style="opacity:0.6; margin-bottom:2px;">交易</div>
+              <div style="font-weight:600; color: ${swapColor};">${swapStatus}</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 6px;">
+              <div style="opacity:0.6; margin-bottom:2px;">刷新</div>
+              <div style="font-weight:600; color: ${refreshColor};">${refreshStatus}</div>
+            </div>
+          </div>
+          <div style="opacity:0.5; font-size:9px; color: #94a3b8;">
+            按 T/F3 展开面板
+          </div>
+        `;
+        
+        // 移除旧的迷你状态（如果存在）
+        const oldMini = document.getElementById('mini-status');
+        if (oldMini) oldMini.remove();
+        
+        this.root.appendChild(miniStatus);
+        console.log('Panel collapsed successfully');
+      } else {
+        // 展开状态：显示完整内容
+        this.mainContent.style.display = 'block';
+        this.root.style.width = '320px';
+        if (this.collapseBtn) {
+          this.collapseBtn.textContent = '▶';
+          this.collapseBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+          this.collapseBtn.style.color = 'rgba(255, 255, 255, 0.9)';
+        }
+        
+        // 移除迷你状态
+        const miniStatus = document.getElementById('mini-status');
+        if (miniStatus) miniStatus.remove();
+        console.log('Panel expanded successfully');
+      }
       } catch (error) {
         console.error('Error during panel toggle:', error);
       }
@@ -256,140 +374,326 @@
 
     const root = document.createElement('div');
     root.style.cssText = `
-      position: fixed; right: 16px; bottom: 16px; z-index: 999999;
-      width: 300px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      border-radius: 12px; overflow: hidden;
-      background: rgba(17,24,39,.92); color: #e5e7eb; backdrop-filter: blur(8px);
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      position: fixed; right: 20px; bottom: 20px; z-index: 999999;
+      width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      border-radius: 16px; overflow: hidden;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+      color: #f1f5f9; backdrop-filter: blur(20px);
+      box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     `;
 
     // ========= 标题栏（包含折叠按钮） =========
     const header = document.createElement('div');
     header.style.cssText = `
-      padding: 8px 12px; display:flex; align-items:center; gap:8px;
-      background: rgba(0,0,0,.2); border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 16px 20px; display:flex; align-items:center; gap:12px;
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
     `;
 
+    // 添加装饰性光效
+    const headerGlow = document.createElement('div');
+    headerGlow.style.cssText = `
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
+      background-size: 200% 100%;
+      animation: shimmer 3s ease-in-out infinite;
+    `;
+    header.appendChild(headerGlow);
+
+    // 添加CSS动画
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shimmer {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      @keyframes slideIn {
+        from { transform: translateY(10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+
     const title = document.createElement('div');
-    title.style.cssText = `font-weight:700; font-size:13px; flex:1;`;
-    title.textContent = 'TradeGenius AutoPilot';
+    title.style.cssText = `
+      font-weight: 600; font-size: 14px; flex:1; color: #f1f5f9;
+      letter-spacing: -0.025em; line-height: 1.2;
+    `;
+    title.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);"></div>
+        TradeGenius AutoPilot
+      </div>
+      <div style="font-size: 11px; opacity: 0.7; margin-top: 2px; font-weight: 400;">
+        Advanced Trading Automation
+      </div>
+    `;
 
     const collapseBtn = document.createElement('button');
     collapseBtn.textContent = '▶';
     collapseBtn.style.cssText = `
-      border:0; cursor:pointer; color:white; padding:4px 6px; border-radius:6px;
-      background: #dc2626; font-weight:700; font-size:12px; width:24px; height:24px;
-      display:flex; align-items:center; justify-content:center;
+      border: none; cursor: pointer; color: rgba(255, 255, 255, 0.9); 
+      padding: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px); font-weight: 500; font-size: 12px;
+      width: 32px; height: 32px; display: flex; align-items: center;
+      justify-content: center; transition: all 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     `;
+    collapseBtn.addEventListener('mouseenter', () => {
+      collapseBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+      collapseBtn.style.transform = 'scale(1.05)';
+    });
+    collapseBtn.addEventListener('mouseleave', () => {
+      collapseBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      collapseBtn.style.transform = 'scale(1)';
+    });
 
     header.appendChild(title);
     header.appendChild(collapseBtn);
 
     // ========= 主要内容区域 =========
     const mainContent = document.createElement('div');
-    mainContent.style.cssText = `display: block;`;
+    mainContent.style.cssText = `display: block; animation: slideIn 0.3s ease-out;`;
 
     // ========= Swap Bot Section =========
+    const swapSection = document.createElement('div');
+    swapSection.style.cssText = `
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    `;
+
     const swapHeader = document.createElement('div');
-    swapHeader.style.cssText = `padding: 10px 12px; display:flex; align-items:center; gap:10px; border-bottom: 1px solid rgba(255,255,255,.08);`;
+    swapHeader.style.cssText = `
+      padding: 16px 20px; display:flex; align-items:center; gap:12px;
+      background: rgba(59, 130, 246, 0.05);
+      transition: background 0.2s ease;
+    `;
 
     const swapDot = document.createElement('span');
-    swapDot.style.cssText = `width:10px; height:10px; border-radius:999px; background:#dc2626; display:inline-block;`;
+    swapDot.style.cssText = `
+      width: 12px; height: 12px; border-radius: 50%; background: #dc2626; 
+      display: inline-block; box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+      transition: all 0.3s ease;
+    `;
 
     const swapTitleWrap = document.createElement('div');
-    swapTitleWrap.style.cssText = `display:flex; flex-direction:column; line-height:1.15;`;
+    swapTitleWrap.style.cssText = `display:flex; flex-direction:column; line-height:1.3; flex:1;`;
 
     const swapTitle = document.createElement('div');
     swapTitle.textContent = 'AutoSwap Bot';
-    swapTitle.style.cssText = `font-weight:700; font-size:13px;`;
+    swapTitle.style.cssText = `
+      font-weight: 600; font-size: 13px; color: #f1f5f9;
+      display: flex; align-items: center; gap: 6px;
+    `;
 
     const swapStatus = document.createElement('div');
     swapStatus.textContent = 'STOPPED';
-    swapStatus.style.cssText = `font-size:12px; opacity:.9;`;
+    swapStatus.style.cssText = `
+      font-size: 11px; opacity: 0.8; font-weight: 500;
+      color: #94a3b8; letter-spacing: 0.025em;
+    `;
+
+    const swapBtn = document.createElement('button');
+    swapBtn.textContent = swapShortcut;
+    swapBtn.style.cssText = `
+      margin-left: auto; border: none; cursor: pointer; color: white;
+      background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+      padding: 10px 16px; border-radius: 10px; font-weight: 600; 
+      font-size: 12px; letter-spacing: 0.025em; transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    `;
+    swapBtn.addEventListener('mouseenter', () => {
+      swapBtn.style.transform = 'translateY(-2px)';
+      swapBtn.style.boxShadow = '0 8px 20px rgba(34, 197, 94, 0.4)';
+    });
+    swapBtn.addEventListener('mouseleave', () => {
+      swapBtn.style.transform = 'translateY(0)';
+      swapBtn.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
+    });
 
     swapTitleWrap.appendChild(swapTitle);
     swapTitleWrap.appendChild(swapStatus);
-
-    const swapBtn = document.createElement('button');
-    // 检测操作系统显示正确的快捷键
-    const swapShortcut = isMacOS() ? 'Start (F1)' : 'Start (Ctrl+Alt+S)';
-    swapBtn.textContent = swapShortcut;
-    swapBtn.style.cssText = `
-      margin-left:auto; border:0; cursor:pointer; color:white;
-      background:#16a34a; padding:8px 10px; border-radius:10px;
-      font-weight:700; font-size:12px;
-    `;
-
     swapHeader.appendChild(swapDot);
     swapHeader.appendChild(swapTitleWrap);
     swapHeader.appendChild(swapBtn);
 
     const swapBody = document.createElement('div');
-    swapBody.style.cssText = `padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.08);`;
+    swapBody.style.cssText = `
+      padding: 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+    `;
 
     // ========= Chain Selection Section =========
     const chainSection = document.createElement('div');
     chainSection.style.cssText = `
-      margin-bottom:8px; padding:6px 8px; border-radius:8px;
-      background: rgba(0,0,0,.15);
-      border: 1px solid rgba(255,255,255,.05);
+      margin: 0; padding: 16px 20px; 
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.03) 0%, rgba(147, 51, 234, 0.03) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    `;
+
+    const chainTitle = document.createElement('div');
+    chainTitle.style.cssText = `
+      font-size: 12px; font-weight: 600; color: #e2e8f0; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    `;
+    chainTitle.innerHTML = `
+      <span style="width: 4px; height: 4px; background: #3b82f6; border-radius: 50%;"></span>
+      区块链选择
     `;
 
     const chainCheckboxContainer = document.createElement('div');
-    chainCheckboxContainer.style.cssText = `display:flex; flex-direction:column;`;
+    chainCheckboxContainer.style.cssText = `display:flex; gap: 8px; flex-wrap: wrap;`;
 
+    chainSection.appendChild(chainTitle);
     chainSection.appendChild(chainCheckboxContainer);
 
     // ========= Author Info =========
     const authorInfo = document.createElement('div');
     authorInfo.style.cssText = `
-      font-size:11px; opacity:.75; margin-bottom:8px;
-      padding:6px 8px; border-radius:8px;
-      background: rgba(0,0,0,.15);
-      border: 1px solid rgba(255,255,255,.05);
+      margin: 0; padding: 12px 20px; font-size: 11px; line-height: 1.4;
+      background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05);
     `;
     authorInfo.innerHTML = `
-      <div style="font-weight:700; margin-bottom:2px;">作者：伍壹51</div>
-      <div style="opacity:.85;">X: <a href="https://x.com/0x515151" target="_blank" style="color:#60a5fa; text-decoration:none;">@0x515151</a></div>
-      <div style="opacity:.85;">TradeGenius: <a href="https://www.tradegenius.com/ref/8C2TSF" target="_blank" style="color:#60a5fa; text-decoration:none;">直達鏈結</a></div>
+      <div style="opacity: 0.9; color: #cbd5e1;">
+        <div style="font-weight: 600; margin-bottom: 4px; color: #f1f5f9;">
+          <span style="opacity: 0.6;">作者：</span>伍壹51
+        </div>
+        <div style="margin-bottom: 2px;">
+          <span style="opacity: 0.6;">X:</span> 
+          <a href="https://x.com/0x515151" target="_blank" 
+             style="color: #60a5fa; text-decoration: none; transition: color 0.2s;">
+             @0x515151
+          </a>
+        </div>
+        <div>
+          <span style="opacity: 0.6;">TradeGenius:</span> 
+          <a href="https://www.tradegenius.com/ref/8C2TSF" target="_blank" 
+             style="color: #60a5fa; text-decoration: none; transition: color 0.2s;">
+             直達鏈結
+          </a>
+        </div>
+      </div>
     `;
 
+    // ========= Tips Section =========
+    const tipsSection = document.createElement('div');
+    tipsSection.style.cssText = `
+      margin: 0; padding: 12px 20px;
+      background: linear-gradient(90deg, rgba(251, 146, 60, 0.1) 0%, rgba(250, 204, 21, 0.1) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    `;
+
+    const tipIcon = document.createElement('div');
+    tipIcon.style.cssText = `
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; background: #f59e0b; color: white;
+      border-radius: 50%; font-size: 10px; font-weight: bold; margin-right: 8px;
+      vertical-align: middle;
+    `;
+    tipIcon.textContent = '!';
+
     const swapTip = document.createElement('div');
-    swapTip.style.cssText = `font-size:11px; opacity:.85; margin-bottom:8px;`;
-    swapTip.textContent = 'Tip: 先確保頁面手動可交易（MAX/Confirm 不灰）再開，全程使用英文介面。';
+    swapTip.style.cssText = `
+      font-size: 11px; opacity: 0.85; line-height: 1.4;
+      color: #fef3c7; display: inline-block;
+    `;
+    swapTip.textContent = '确保页面可正常交易（MAX/Confirm按钮可用），建议使用英文界面。';
+
+    const tipContainer = document.createElement('div');
+    tipContainer.style.cssText = 'display: flex; align-items: flex-start;';
+    tipContainer.appendChild(tipIcon);
+    tipContainer.appendChild(swapTip);
+
+    tipsSection.appendChild(tipContainer);
+
+    // ========= Log Section =========
+    const logSection = document.createElement('div');
+    logSection.style.cssText = `
+      margin: 0; padding: 0;
+    `;
 
     const swapLog = document.createElement('pre');
     swapLog.style.cssText = `
-      margin:0; padding:8px; border-radius:10px;
-      background: rgba(0,0,0,.25);
-      font-size:11px; line-height:1.35;
+      margin: 0; padding: 16px 20px; 
+      background: rgba(0,0,0,0.4);
+      font-size: 11px; line-height: 1.4;
       white-space: pre-wrap; word-break: break-word;
-      max-height: 120px; overflow:auto;
+      max-height: 140px; overflow-y: auto;
+      font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255,255,255,0.05);
     `;
     swapLog.textContent = 'Ready.\n';
 
-    swapBody.appendChild(chainSection);  // 链选择放最上面
+    // 自定义滚动条样式
+    const scrollbarStyle = document.createElement('style');
+    scrollbarStyle.textContent = `
+      .log-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .log-scroll::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.2);
+      }
+      .log-scroll::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.3);
+        border-radius: 3px;
+      }
+      .log-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.5);
+      }
+    `;
+    document.head.appendChild(scrollbarStyle);
+    swapLog.className = 'log-scroll';
+
+    logSection.appendChild(swapLog);
+
+    swapBody.appendChild(chainSection);
     swapBody.appendChild(authorInfo);
-    swapBody.appendChild(swapTip);
-    swapBody.appendChild(swapLog);
+    swapBody.appendChild(tipsSection);
+    swapBody.appendChild(logSection);
 
     // ========= Refresh Section =========
+    const refreshSection = document.createElement('div');
+    refreshSection.style.cssText = `border-bottom: none;`;
+
     const refreshHeader = document.createElement('div');
-    refreshHeader.style.cssText = `padding: 10px 12px; display:flex; gap:10px; align-items:center; border-bottom: 1px solid rgba(255,255,255,.08);`;
+    refreshHeader.style.cssText = `
+      padding: 16px 20px; display:flex; gap:12px; align-items:center;
+      background: rgba(34, 197, 94, 0.05);
+    `;
 
     const refreshDot = document.createElement('span');
-    refreshDot.style.cssText = `width:10px; height:10px; border-radius:999px; background:#16a34a; display:inline-block;`;
+    refreshDot.style.cssText = `
+      width: 12px; height: 12px; border-radius: 50%; background: #16a34a; 
+      display: inline-block; box-shadow: 0 0 10px rgba(22, 163, 74, 0.5);
+      transition: all 0.3s ease;
+    `;
 
     const refreshTitleWrap = document.createElement('div');
-    refreshTitleWrap.style.cssText = `display:flex; flex-direction:column; line-height:1.15;`;
+    refreshTitleWrap.style.cssText = `display:flex; flex-direction:column; line-height:1.3; flex:1;`;
 
     const refreshTitle = document.createElement('div');
     refreshTitle.textContent = 'Auto Refresh';
-    refreshTitle.style.cssText = `font-weight:700; font-size:13px;`;
+    refreshTitle.style.cssText = `
+      font-weight: 600; font-size: 13px; color: #f1f5f9;
+    `;
 
     const refreshStatus = document.createElement('div');
     refreshStatus.textContent = 'RUNNING';
-    refreshStatus.style.cssText = `font-size:12px; opacity:.9;`;
+    refreshStatus.style.cssText = `
+      font-size: 11px; opacity: 0.8; font-weight: 500;
+      color: #94a3b8; letter-spacing: 0.025em;
+    `;
 
     refreshTitleWrap.appendChild(refreshTitle);
     refreshTitleWrap.appendChild(refreshStatus);
@@ -398,56 +702,120 @@
     refreshHeader.appendChild(refreshTitleWrap);
 
     const refreshBody = document.createElement('div');
-    refreshBody.style.cssText = `padding: 10px 12px;`;
+    refreshBody.style.cssText = `
+      padding: 0; background: rgba(0,0,0,0.2);
+    `;
+
+    // ========= Status Cards =========
+    const statusGrid = document.createElement('div');
+    statusGrid.style.cssText = `
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 16px 20px 12px; border-radius: 8px; overflow: hidden;
+    `;
 
     const refreshNext = document.createElement('div');
-    refreshNext.style.cssText = `margin-bottom:6px; opacity:.9; font-size:12px;`;
-    refreshNext.textContent = 'Next: -';
+    refreshNext.style.cssText = `
+      padding: 10px 12px; background: rgba(0,0,0,0.3); font-size: 11px;
+      color: #cbd5e1; display: flex; flex-direction: column; align-items: center;
+    `;
+    refreshNext.innerHTML = `
+      <div style="opacity: 0.6; margin-bottom: 2px;">下次刷新</div>
+      <div style="font-weight: 600; color: #f1f5f9;">Next: -</div>
+    `;
 
     const refreshLeft = document.createElement('div');
-    refreshLeft.style.cssText = `margin-bottom:10px; opacity:.9; font-size:12px;`;
-    refreshLeft.textContent = 'Left: -';
+    refreshLeft.style.cssText = `
+      padding: 10px 12px; background: rgba(0,0,0,0.3); font-size: 11px;
+      color: #cbd5e1; display: flex; flex-direction: column; align-items: center;
+    `;
+    refreshLeft.innerHTML = `
+      <div style="opacity: 0.6; margin-bottom: 2px;">剩余时间</div>
+      <div style="font-weight: 600; color: #f1f5f9;">Left: -</div>
+    `;
 
+    statusGrid.appendChild(refreshNext);
+    statusGrid.appendChild(refreshLeft);
+
+    // ========= Button Row =========
     const refreshBtnRow = document.createElement('div');
-    refreshBtnRow.style.cssText = `display:flex; gap:8px;`;
+    refreshBtnRow.style.cssText = `
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      padding: 0 20px 16px;
+    `;
 
     const refreshBtnToggle = document.createElement('button');
-    refreshBtnToggle.style.cssText = `
-      flex:1; border:0; cursor:pointer; color:white;
-      background:#dc2626; padding:8px 10px; border-radius:10px;
-      font-weight:700; font-size:12px;
-    `;
-    const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
     refreshBtnToggle.textContent = `Pause (${refreshShortcut})`;
+    refreshBtnToggle.style.cssText = `
+      border: none; cursor: pointer; color: white;
+      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+      padding: 10px 12px; border-radius: 8px; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.025em; transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    `;
+    refreshBtnToggle.addEventListener('mouseenter', () => {
+      refreshBtnToggle.style.transform = 'translateY(-2px)';
+      refreshBtnToggle.style.boxShadow = '0 8px 20px rgba(239, 68, 68, 0.4)';
+    });
+    refreshBtnToggle.addEventListener('mouseleave', () => {
+      refreshBtnToggle.style.transform = 'translateY(0)';
+      refreshBtnToggle.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+    });
 
     const refreshBtnNow = document.createElement('button');
+    refreshBtnNow.textContent = '立即刷新';
     refreshBtnNow.style.cssText = `
-      flex:1; border:0; cursor:pointer; color:white;
-      background:#2563eb; padding:8px 10px; border-radius:10px;
-      font-weight:700; font-size:12px;
+      border: none; cursor: pointer; color: white;
+      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+      padding: 10px 12px; border-radius: 8px; font-weight: 600;
+      font-size: 11px; letter-spacing: 0.025em; transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      border: 1px solid rgba(59, 130, 246, 0.2);
     `;
-    refreshBtnNow.textContent = 'Refresh now';
+    refreshBtnNow.addEventListener('mouseenter', () => {
+      refreshBtnNow.style.transform = 'translateY(-2px)';
+      refreshBtnNow.style.boxShadow = '0 8px 20px rgba(59, 130, 246, 0.4)';
+    });
+    refreshBtnNow.addEventListener('mouseleave', () => {
+      refreshBtnNow.style.transform = 'translateY(0)';
+      refreshBtnNow.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+    });
+
+    // ========= Footer =========
+    const refreshFooter = document.createElement('div');
+    refreshFooter.style.cssText = `
+      padding: 12px 20px; background: rgba(0,0,0,0.3);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    `;
 
     const refreshTip = document.createElement('div');
-    refreshTip.style.cssText = `margin-top:10px; font-size:11px; opacity:.65; line-height:1.35;`;
-    const shortcuts = isMacOS() ? 
-      'F1 (Bot) F2 (Refresh) T/F3 (Toggle)' : 
-      'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T/F3 (Toggle)';
-    refreshTip.textContent = `快捷键: ${shortcuts} | 随机间隔: ${REFRESH_CONFIG.MIN_MINUTES}–${REFRESH_CONFIG.MAX_MINUTES}分钟`;
+    refreshTip.style.cssText = `
+      font-size: 10px; opacity: 0.7; line-height: 1.4;
+      color: #94a3b8; text-align: center;
+    `;
+    refreshTip.innerHTML = `
+      <span style="opacity: 0.5;">⌨️</span> 
+      ${shortcuts} | 
+      <span style="opacity: 0.5;">⏱️</span> 
+      ${REFRESH_CONFIG.MIN_MINUTES}–${REFRESH_CONFIG.MAX_MINUTES}分钟随机间隔
+    `;
 
     refreshBtnRow.appendChild(refreshBtnToggle);
     refreshBtnRow.appendChild(refreshBtnNow);
-
-    refreshBody.appendChild(refreshNext);
-    refreshBody.appendChild(refreshLeft);
+    refreshBody.appendChild(statusGrid);
     refreshBody.appendChild(refreshBtnRow);
-    refreshBody.appendChild(refreshTip);
+    refreshFooter.appendChild(refreshTip);
+    refreshBody.appendChild(refreshFooter);
 
     // ========= Assemble Main Content =========
-    mainContent.appendChild(swapHeader);
-    mainContent.appendChild(swapBody);
-    mainContent.appendChild(refreshHeader);
-    mainContent.appendChild(refreshBody);
+    swapSection.appendChild(swapHeader);
+    swapSection.appendChild(swapBody);
+    refreshSection.appendChild(refreshHeader);
+    refreshSection.appendChild(refreshBody);
+    
+    mainContent.appendChild(swapSection);
+    mainContent.appendChild(refreshSection);
 
     // ========= Assemble Full UI =========
     root.appendChild(header);
