@@ -3,7 +3,7 @@
 # TradeGenius AutoPilot
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-2.0.0-green.svg)](https://github.com/0xLukin/TradeGenius)
+[![Version](https://img.shields.io/badge/Version-2.0.0-green.svg)](https://github.com/0xLukin/TradeGenius/tree/hunter-maintenance)
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey-orange.svg)](https://www.tampermonkey.net/)
 
 **🤖 智能自动化交易机器人**  
@@ -63,7 +63,7 @@
 **方法一：GitHub Raw 链接安装（推荐）**
 1. 点击以下链接直接访问脚本文件：
    ```bash
-   https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js
+   https://raw.githubusercontent.com/0xLukin/TradeGenius/hunter-maintenance/tradegenius-autopilot.user.js
    ```
 2. 浏览器会显示脚本代码，按 `Ctrl+A` 全选代码
 3. 复制所有代码 (`Ctrl+C`)
@@ -71,7 +71,7 @@
 5. 粘贴代码 (`Ctrl+V`) 并按 `Ctrl+S` 保存
 
 **方法二：GitHub 页面安装**
-1. 访问项目仓库：[https://github.com/0xLukin/TradeGenius](https://github.com/0xLukin/TradeGenius)
+1. 访问项目仓库：[https://github.com/0xLukin/TradeGenius/tree/hunter-maintenance](https://github.com/0xLukin/TradeGenius/tree/hunter-maintenance)
 2. 点击 `tradegenius-autopilot.user.js` 文件
 3. 点击文件右上角的 "Copy" 或 "Raw" 按钮
 4. 如果点击 "Raw"，复制显示的代码
@@ -79,7 +79,7 @@
 6. 按 `Ctrl+S` 保存脚本
 
 **方法三：直接文件下载**
-1. 右键点击此链接：[下载 tradegenius-autopilot.user.js](https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js)
+1. 右键点击此链接：[下载 tradegenius-autopilot.user.js](https://raw.githubusercontent.com/0xLukin/TradeGenius/hunter-maintenance/tradegenius-autopilot.user.js)
 2. 选择 "链接另存为..." 保存文件到本地
 3. 打开 Tampermonkey → "实用工具" → "从文件安装"
 4. 选择下载的文件并安装
@@ -226,6 +226,6 @@ graph LR
 
 **⭐ 如果这个项目对你有帮助，请给个 Star！**
 
-Made with ❤️ by [TradeGenius AutoPilot Community](https://github.com/0xLukin/TradeGenius-AutoPilot)
+Made with ❤️ by [TradeGenius AutoPilot Community](https://github.com/0xLukin/TradeGenius/tree/hunter-maintenance)
 
 </div>
