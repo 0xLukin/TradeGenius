@@ -503,6 +503,9 @@
       color: #94a3b8; letter-spacing: 0.025em;
     `;
 
+    // 检测操作系统显示正确的快捷键
+    const swapShortcut = isMacOS() ? 'Start (F1)' : 'Start (Ctrl+Alt+S)';
+    
     const swapBtn = document.createElement('button');
     swapBtn.textContent = swapShortcut;
     swapBtn.style.cssText = `
@@ -744,6 +747,7 @@
       padding: 0 20px 16px;
     `;
 
+    const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
     const refreshBtnToggle = document.createElement('button');
     refreshBtnToggle.textContent = `Pause (${refreshShortcut})`;
     refreshBtnToggle.style.cssText = `
@@ -789,6 +793,10 @@
       border-top: 1px solid rgba(255,255,255,0.08);
     `;
 
+    const shortcuts = isMacOS() ? 
+      'F1 (Bot) F2 (Refresh) T/F3 (Toggle)' : 
+      'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T/F3 (Toggle)';
+    
     const refreshTip = document.createElement('div');
     refreshTip.style.cssText = `
       font-size: 10px; opacity: 0.7; line-height: 1.4;
