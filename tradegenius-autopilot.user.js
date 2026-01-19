@@ -22,6 +22,7 @@
     MAX_MINUTES: 40,
     KEY_ENABLED: 'tg_rand_refresh_enabled',
     KEY_NEXT_AT: 'tg_rand_refresh_next_at',
+    KEY_SWAP_RUNNING: 'tg_swap_running', // 保存swap运行状态
   };
 
   const MIN_MS = REFRESH_CONFIG.MIN_MINUTES * 60 * 1000;
@@ -903,27 +904,35 @@
           toggleRefresh();
         }
       }
-      // T: Toggle Panel (仅当焦点不在输入框时)
-      if (e.key === 't' || e.key === 'T') {
-        const activeElement = document.activeElement;
-        const isInputFocused = activeElement && (
-          activeElement.tagName === 'INPUT' || 
-          activeElement.tagName === 'TEXTAREA' || 
-          activeElement.contentEditable === 'true'
-        );
-        
-        console.log('T key pressed, inputFocused:', isInputFocused);
-        
-        if (!isInputFocused) {
-          e.preventDefault();
-          try {
-            console.log('Toggle panel triggered');
-            UI.togglePanel();
-          } catch (error) {
-            console.error('Toggle panel error:', error);
+        // T: Toggle Panel (仅当焦点不在输入框时)
+        if (e.key === 't' || e.key === 'T') {
+          const activeElement = document.activeElement;
+          const isInputFocused = activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' || 
+            activeElement.contentEditable === 'true'
+          );
+          
+          console.log('T key pressed, inputFocused:', isInputFocused);
+          
+          if (!isInputFocused) {
+            e.preventDefault();
+            try {
+              console.log('Toggle panel triggered');
+              UI.togglePanel();
+            } catch (error) {
+              console.error('Toggle panel error:', error);
+            }
           }
         }
-      }
+
+        // Ctrl/Cmd + Shift + R: 保存状态并立即刷新（用于测试）
+        if ((isMac ? e.metaKey : e.ctrlKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
+          e.preventDefault();
+          UI.logSwap('🔄 手动保存状态并刷新...');
+          localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, isSwapRunning ? '1' : '0');
+          setTimeout(() => location.reload(), 100);
+        }
 
       // F1-F3 快捷键（所有用户）
       // F1: Toggle Swap Bot
@@ -982,6 +991,10 @@
   function doReload(reason) {
     const nextAt = Date.now() + randDelay();
     setNextAt(nextAt);
+
+    // 在刷新前保存swap运行状态
+    localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, isSwapRunning ? '1' : '0');
+    UI.logSwap(`💾 保存运行状态: ${isSwapRunning ? '运行中' : '已停止'}`);
 
     sleep(150).then(() => {
       location.reload();
@@ -1203,6 +1216,8 @@
     window.botRunning = true;
     isSwapRunning = true;
     UI.setSwapRunning(true);
+    // 运行时保存状态
+    localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, '1');
 
     UI.logSwap(`🚀 Bot started. 区间: ${SWAP_CONFIG.waitRandomMin/1000}s - ${SWAP_CONFIG.waitRandomMax/1000}s`);
 
@@ -1322,6 +1337,8 @@
 
     window.botRunning = false;
     UI.setSwapRunning(false);
+    // 停止时清除保存的运行状态
+    localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, '0');
     UI.logSwap("🛑 Bot stopped.");
   }
 
@@ -1329,6 +1346,8 @@
     isSwapRunning = false;
     window.botRunning = false;
     UI.setSwapRunning(false);
+    // 停止时清除保存的运行状态
+    localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, '0');
     UI.logSwap("🛑 stop() called");
   }
 
@@ -1350,6 +1369,17 @@
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
+    
+    // 检查并恢复swap运行状态
+    const savedSwapRunning = localStorage.getItem(REFRESH_CONFIG.KEY_SWAP_RUNNING) === '1';
+    if (savedSwapRunning) {
+      UI.logSwap('🔄 检测到刷新前运行中，自动重启...');
+      // 延迟一点时间让页面完全加载
+      setTimeout(() => {
+        window.startBot();
+      }, 2000);
+    }
+    
     const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
     UI.logSwap(`Loaded. 选择链: ${selectedChains[0] || '未选择'}. Click Start or press ${shortcut}.`);
   }
