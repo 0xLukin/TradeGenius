@@ -60,12 +60,41 @@
   let isSwapRunning = false;
   let selectedFromToken = null;
   let loopPromise = null;
+  let selectedChains = ['BNB']; // 默认选择BNB链
 
   // ========= Auto Refresh 變數 =========
   let refreshEnabled = localStorage.getItem(REFRESH_CONFIG.KEY_ENABLED);
   refreshEnabled = refreshEnabled === null ? true : refreshEnabled === '1';
   let refreshTimerId = null;
   let refreshTickerId = null;
+
+  // ========= Chain Selection 配置 =========
+  const CHAIN_CONFIG = {
+    KEY_SELECTED_CHAINS: 'tg_selected_chains',
+    SUPPORTED_CHAINS: ['BNB', 'OP', 'SOL'],
+    CHAIN_ALIASES: {
+      'BNB': ['BNB', 'Binance', 'BNB Chain'],
+      'OP': ['OP', 'Optimism', 'Optimism Network'],
+      'SOL': ['SOL', 'Solana', 'Solana Network']
+    }
+  };
+
+  // 加载用户选择的链配置
+  function loadChainConfig() {
+    const saved = localStorage.getItem(CHAIN_CONFIG.KEY_SELECTED_CHAINS);
+    if (saved) {
+      try {
+        selectedChains = JSON.parse(saved);
+      } catch (e) {
+        selectedChains = ['BNB']; // 解析失败时使用默认值
+      }
+    }
+  }
+
+  // 保存链配置
+  function saveChainConfig() {
+    localStorage.setItem(CHAIN_CONFIG.KEY_SELECTED_CHAINS, JSON.stringify(selectedChains));
+  }
 
   // ========= 合併 UI 面板 =========
   const UI = {
@@ -75,6 +104,8 @@
     swapStatusText: null,
     swapBtnToggle: null,
     swapLogEl: null,
+    // Chain Selection UI
+    chainCheckboxContainer: null,
     // Refresh UI
     refreshDot: null,
     refreshStatus: null,
@@ -109,6 +140,45 @@
 
       const leftMs = at ? (at - Date.now()) : 0;
       this.refreshLeftEl.textContent = at ? `Left: ${fmtLeft(leftMs)}` : 'Left: -';
+    },
+
+    renderChainSelection() {
+      if (!this.chainCheckboxContainer) return;
+      
+      this.chainCheckboxContainer.innerHTML = '';
+      const title = document.createElement('div');
+      title.style.cssText = `font-size:11px; font-weight:700; margin-bottom:6px; opacity:.9;`;
+      title.textContent = '选择区块链：';
+      this.chainCheckboxContainer.appendChild(title);
+
+      CHAIN_CONFIG.SUPPORTED_CHAINS.forEach(chain => {
+        const label = document.createElement('label');
+        label.style.cssText = `display:flex; align-items:center; gap:6px; margin-bottom:4px; cursor:pointer; font-size:11px; opacity:.85;`;
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = selectedChains.includes(chain);
+        checkbox.style.cssText = `margin:0; cursor:pointer;`;
+        
+        const span = document.createElement('span');
+        span.textContent = chain;
+        
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            if (!selectedChains.includes(chain)) {
+              selectedChains.push(chain);
+            }
+          } else {
+            selectedChains = selectedChains.filter(c => c !== chain);
+          }
+          saveChainConfig();
+          UI.logSwap(`链配置更新: ${selectedChains.join(', ')}`);
+        });
+        
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        this.chainCheckboxContainer.appendChild(label);
+      });
     }
   };
 
@@ -160,7 +230,20 @@
     const swapBody = document.createElement('div');
     swapBody.style.cssText = `padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.08);`;
 
-    // ========= Author Info (移到這裡，在 Tip 上面) =========
+    // ========= Chain Selection Section =========
+    const chainSection = document.createElement('div');
+    chainSection.style.cssText = `
+      margin-bottom:8px; padding:6px 8px; border-radius:8px;
+      background: rgba(0,0,0,.15);
+      border: 1px solid rgba(255,255,255,.05);
+    `;
+
+    const chainCheckboxContainer = document.createElement('div');
+    chainCheckboxContainer.style.cssText = `display:flex; flex-direction:column;`;
+
+    chainSection.appendChild(chainCheckboxContainer);
+
+    // ========= Author Info =========
     const authorInfo = document.createElement('div');
     authorInfo.style.cssText = `
       font-size:11px; opacity:.75; margin-bottom:8px;
@@ -188,7 +271,8 @@
     `;
     swapLog.textContent = 'Ready.\n';
 
-    swapBody.appendChild(authorInfo);  // 作者資訊放最上面
+    swapBody.appendChild(chainSection);  // 链选择放最上面
+    swapBody.appendChild(authorInfo);
     swapBody.appendChild(swapTip);
     swapBody.appendChild(swapLog);
 
@@ -271,6 +355,7 @@
     UI.swapStatusText = swapStatus;
     UI.swapBtnToggle = swapBtn;
     UI.swapLogEl = swapLog;
+    UI.chainCheckboxContainer = chainCheckboxContainer;
     UI.refreshDot = refreshDot;
     UI.refreshStatus = refreshStatus;
     UI.refreshNextEl = refreshNext;
@@ -279,6 +364,7 @@
     UI.refreshBtnNow = refreshBtnNow;
 
     UI.setSwapRunning(false);
+    UI.renderChainSelection();
     UI.renderRefresh();
 
     // ========= Event Listeners =========
@@ -431,6 +517,7 @@
 
     const targetToken = selectedFromToken === 'USDT' ? 'USDC' : 'USDT';
     UI.logSwap(`From 是 ${selectedFromToken}，Receive 选择 ${targetToken}`);
+    UI.logSwap(`目标链: ${selectedChains.join(', ')}`);
 
     const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
     let stableTab = null;
@@ -454,7 +541,7 @@
       const symbol = symbolEl?.innerText?.trim();
 
       if (symbol === targetToken) {
-        UI.logSwap(`找到 ${symbol}，尝试选择 BNB 链...`);
+        UI.logSwap(`找到 ${symbol}，尝试选择链...`);
 
         row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
         await sleep(SWAP_CONFIG.waitForHover);
@@ -462,16 +549,34 @@
         const chainMenu = row.querySelector('.genius-shadow');
         if (chainMenu) {
           const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
-          for (const opt of chainOptions) {
-            const chainName = opt.querySelector('span')?.innerText?.trim();
-            if (chainName === 'BNB' || chainName === 'Binance') {
-              opt.click();
-              UI.logSwap(`✅ Receive 选择了 ${symbol} (BNB链)`);
-              return true;
+          let chainSelected = false;
+
+          // 尝试按优先级顺序选择用户配置的链
+          for (const targetChain of selectedChains) {
+            for (const opt of chainOptions) {
+              const chainName = opt.querySelector('span')?.innerText?.trim();
+              
+              // 检查链名称是否匹配目标链（包括别名）
+              if (CHAIN_CONFIG.CHAIN_ALIASES[targetChain].some(alias => 
+                  chainName?.toLowerCase() === alias.toLowerCase())) {
+                opt.click();
+                UI.logSwap(`✅ Receive 选择了 ${symbol} (${targetChain}链)`);
+                chainSelected = true;
+                return true;
+              }
             }
+          }
+
+          // 如果没有找到匹配的链，选择第一个可用链
+          if (!chainSelected && chainOptions.length > 0) {
+            chainOptions[0].click();
+            const fallbackChain = chainOptions[0].querySelector('span')?.innerText?.trim() || 'Unknown';
+            UI.logSwap(`⚠️ 未找到目标链，选择 ${symbol} (${fallbackChain}链)`);
+            return true;
           }
         }
 
+        // 如果没有链菜单，直接点击代币行
         row.click();
         UI.logSwap(`✅ Receive 直接选择了 ${symbol}`);
         return true;
@@ -633,10 +738,11 @@
 
   // ========= 初始化 =========
   function init() {
+    loadChainConfig(); // 加载链配置
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
-    UI.logSwap('Loaded. Click Start or press Ctrl+Alt+S.');
+    UI.logSwap(`Loaded. 选择链: ${selectedChains.join(', ')}. Click Start or press Ctrl+Alt+S.`);
   }
 
   if (document.readyState === 'loading') {
