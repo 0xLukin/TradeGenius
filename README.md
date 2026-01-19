@@ -60,24 +60,29 @@
 
 #### 第二步：安装用户脚本
 
-**方法一：一键安装（推荐）**
-1. 点击以下链接直接安装：
+**方法一：GitHub Raw 链接安装（推荐）**
+1. 点击以下链接直接访问脚本文件：
    ```bash
-   https://install.tampermonkey.net/?url=https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js
+   https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js
    ```
-2. 在弹出的 Tampermonkey 安装页面中，点击 "安装"
+2. 浏览器会显示脚本代码，按 `Ctrl+A` 全选代码
+3. 复制所有代码 (`Ctrl+C`)
+4. 点击 Tampermonkey 图标 → "创建新脚本"
+5. 粘贴代码 (`Ctrl+V`) 并按 `Ctrl+S` 保存
 
-**方法二：手动安装**
-1. 下载脚本文件：[tradegenius-autopilot.user.js](https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js)
-2. 点击浏览器工具栏中的 Tampermonkey 图标
-3. 选择 "创建新脚本"
-4. 删除默认内容，粘贴下载的脚本代码
-5. 按 `Ctrl+S` 保存脚本
-
-**方法三：GitHub 下载**
+**方法二：GitHub 页面安装**
 1. 访问项目仓库：[https://github.com/0xLukin/TradeGenius](https://github.com/0xLukin/TradeGenius)
-2. 下载 `tradegenius-autopilot.user.js` 文件
-3. 按照方法二手动安装
+2. 点击 `tradegenius-autopilot.user.js` 文件
+3. 点击文件右上角的 "Copy" 或 "Raw" 按钮
+4. 如果点击 "Raw"，复制显示的代码
+5. 在 Tampermonkey 中创建新脚本并粘贴代码
+6. 按 `Ctrl+S` 保存脚本
+
+**方法三：直接文件下载**
+1. 右键点击此链接：[下载 tradegenius-autopilot.user.js](https://raw.githubusercontent.com/0xLukin/TradeGenius/main/tradegenius-autopilot.user.js)
+2. 选择 "链接另存为..." 保存文件到本地
+3. 打开 Tampermonkey → "实用工具" → "从文件安装"
+4. 选择下载的文件并安装
 
 #### 第三步：验证安装
 
