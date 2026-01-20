@@ -1221,10 +1221,43 @@
           UI.logSwap(`  检查: ${symbol}`);
           
           if (symbol === token) {
-            UI.logSwap(`✅ 发现已持有 ${token}，点击选择`);
-            row.click();
+            UI.logSwap(`✅ 发现已持有 ${token}，尝试点击...`);
+            
+            // 尝试多种点击方式
+            let clicked = false;
+            
+            // 方式1：直接点击row
+            try {
+              row.click();
+              clicked = true;
+            } catch (e) {}
+            
+            // 方式2：模拟真实点击
+            if (!clicked) {
+              try {
+                row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                clicked = true;
+              } catch (e) {}
+            }
+            
+            // 方式3：点击row内的按钮
+            if (!clicked) {
+              const clickableChild = row.querySelector('button, [role="button"], .cursor-pointer');
+              if (clickableChild) {
+                clickableChild.click();
+                clicked = true;
+              }
+            }
+            
             await sleep(500);
-            return token;
+            
+            if (clicked) {
+              UI.logSwap(`✅ ${token} 点击成功`);
+              return token;
+            } else {
+              UI.logSwap(`❌ ${token} 点击失败`);
+              return null;
+            }
           }
         }
       }
@@ -1485,10 +1518,55 @@
       }
 
       if (kogeRow) {
-        UI.logSwap(`✅ 找到 KOGE，点击选择（仅BNB链）`);
-        kogeRow.click();
+        UI.logSwap(`✅ 找到 KOGE，尝试点击...`);
+        
+        // 尝试多种点击方式
+        let clicked = false;
+        
+        // 方式1：直接点击row
+        try {
+          kogeRow.click();
+          UI.logSwap(`  方式1: 直接点击`);
+          clicked = true;
+        } catch (e) {}
+        
+        // 方式2：模拟真实点击
+        if (!clicked) {
+          try {
+            kogeRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            UI.logSwap(`  方式2: dispatchEvent click`);
+            clicked = true;
+          } catch (e) {}
+        }
+        
+        // 方式3：点击row内的按钮或可点击元素
+        if (!clicked) {
+          const clickableChild = kogeRow.querySelector('button, [role="button"], .cursor-pointer');
+          if (clickableChild) {
+            clickableChild.click();
+            UI.logSwap(`  方式3: 点击子元素`);
+            clicked = true;
+          }
+        }
+        
+        // 方式4：双击
+        if (!clicked) {
+          try {
+            kogeRow.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+            UI.logSwap(`  方式4: 双击`);
+            clicked = true;
+          } catch (e) {}
+        }
+        
         await sleep(SWAP_CONFIG.waitAfterChoose);
-        return true;
+        
+        if (clicked) {
+          UI.logSwap(`✅ KOGE 点击成功（仅BNB链）`);
+          return true;
+        } else {
+          UI.logSwap(`❌ KOGE 点击失败`);
+          return false;
+        }
       }
 
       UI.logSwap("❌ 未找到 KOGE");
