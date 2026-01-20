@@ -1206,6 +1206,13 @@
     return !!document.querySelector('[role="dialog"][data-state="open"]');
   }
 
+  function isAmountExceedsBalance() {
+    const allTexts = Array.from(document.querySelectorAll('*'))
+      .map(el => el.innerText || '')
+      .join(' ');
+    return allTexts.includes('Amount Exceeds Balance');
+  }
+
   async function selectExistingToken() {
     try {
       // 在当前页面上查找已有的代币，优先KOGE，其次USDT
@@ -1594,6 +1601,13 @@
 
         await sleep(SWAP_CONFIG.waitAfterMax);
 
+        // 检查是否余额不足
+        if (isAmountExceedsBalance()) {
+          UI.logSwap("⚠️ 余额不足 (Amount Exceeds Balance)，停止交易");
+          stopSwapLoop();
+          continue;
+        }
+
         // 首先检查是否有Simulation failed错误
         const simFailedBtn = findSimulationFailedBtn();
         if (simFailedBtn) {
@@ -1605,7 +1619,8 @@
 
         let confirmClicked = false;
         let simFailedDetected = false;
-        
+        let balanceIssue = false;
+
         for (let i = 0; i < SWAP_CONFIG.maxRetryConfirm; i++) {
           // 每次重试前检查Simulation failed
           const simFailedCheck = findSimulationFailedBtn();
@@ -1614,7 +1629,14 @@
             simFailedDetected = true;
             break;
           }
-          
+
+          // 检查余额不足
+          if (isAmountExceedsBalance()) {
+            UI.logSwap("⚠️ 余额不足 (Amount Exceeds Balance)，停止交易");
+            balanceIssue = true;
+            break;
+          }
+
           const btnConfirm = findConfirmBtn();
           if (btnConfirm && !btnConfirm.disabled) {
             btnConfirm.click();
@@ -1623,6 +1645,11 @@
             break;
           }
           await sleep(500);
+        }
+
+        if (balanceIssue) {
+          stopSwapLoop();
+          continue;
         }
 
         if (simFailedDetected) {
