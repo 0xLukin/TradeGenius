@@ -1229,22 +1229,29 @@
             // 方式1：直接点击row
             try {
               row.click();
+              UI.logSwap(`  方式1: 直接点击`);
               clicked = true;
-            } catch (e) {}
+            } catch (e) {
+              UI.logSwap(`  方式1 失败: ${e.message}`);
+            }
             
-            // 方式2：模拟真实点击
+            // 方式2：dispatchEvent
             if (!clicked) {
               try {
                 row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                UI.logSwap(`  方式2: dispatchEvent`);
                 clicked = true;
-              } catch (e) {}
+              } catch (e) {
+                UI.logSwap(`  方式2 失败: ${e.message}`);
+              }
             }
             
-            // 方式3：点击row内的按钮
+            // 方式3：点击row内的元素
             if (!clicked) {
-              const clickableChild = row.querySelector('button, [role="button"], .cursor-pointer');
-              if (clickableChild) {
-                clickableChild.click();
+              const clickable = row.querySelector('span, div, button');
+              if (clickable) {
+                clickable.click();
+                UI.logSwap(`  方式3: 点击span/div/button`);
                 clicked = true;
               }
             }
@@ -1520,42 +1527,65 @@
       if (kogeRow) {
         UI.logSwap(`✅ 找到 KOGE，尝试点击...`);
         
-        // 尝试多种点击方式
-        let clicked = false;
+        // 使用用户提供的确切选择器
+        const exactRow = document.querySelector('#radix-\\:r19\\: > div > div.flex.flex-col > div.w-full.h-\\[350px\\] > div > div > div > div > div');
         
-        // 方式1：直接点击row
-        try {
-          kogeRow.click();
-          UI.logSwap(`  方式1: 直接点击`);
-          clicked = true;
-        } catch (e) {}
-        
-        // 方式2：模拟真实点击
-        if (!clicked) {
+        if (exactRow) {
+          UI.logSwap(`✅ 使用确切选择器找到KOGE行`);
+          
+          // 尝试多种点击方式
+          let clicked = false;
+          
+          // 方式1：直接点击
           try {
-            kogeRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-            UI.logSwap(`  方式2: dispatchEvent click`);
+            exactRow.click();
+            UI.logSwap(`  方式1: 直接点击`);
             clicked = true;
-          } catch (e) {}
-        }
-        
-        // 方式3：点击row内的按钮或可点击元素
-        if (!clicked) {
-          const clickableChild = kogeRow.querySelector('button, [role="button"], .cursor-pointer');
-          if (clickableChild) {
-            clickableChild.click();
-            UI.logSwap(`  方式3: 点击子元素`);
-            clicked = true;
+          } catch (e) {
+            UI.logSwap(`  方式1 失败: ${e.message}`);
+          }
+          
+          // 方式2：dispatchEvent
+          if (!clicked) {
+            try {
+              exactRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+              UI.logSwap(`  方式2: dispatchEvent`);
+              clicked = true;
+            } catch (e) {
+              UI.logSwap(`  方式2 失败: ${e.message}`);
+            }
+          }
+          
+          // 方式3：点击row内的span或div
+          if (!clicked) {
+            const clickable = exactRow.querySelector('span, div');
+            if (clickable) {
+              clickable.click();
+              UI.logSwap(`  方式3: 点击span`);
+              clicked = true;
+            }
+          }
+          
+          await sleep(SWAP_CONFIG.waitAfterChoose);
+          
+          if (clicked) {
+            UI.logSwap(`✅ KOGE 点击成功（仅BNB链）`);
+            return true;
           }
         }
         
-        // 方式4：双击
+        // 如果确切选择器失败，回退到原逻辑
+        UI.logSwap(`⚠️ 确切选择器未找到，回退到普通逻辑`);
+        
+        let clicked = false;
+        try {
+          kogeRow.click();
+          clicked = true;
+        } catch (e) {}
+        
         if (!clicked) {
-          try {
-            kogeRow.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-            UI.logSwap(`  方式4: 双击`);
-            clicked = true;
-          } catch (e) {}
+          kogeRow.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          clicked = true;
         }
         
         await sleep(SWAP_CONFIG.waitAfterChoose);
