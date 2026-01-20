@@ -91,7 +91,7 @@
     KEY_SELECTED_PAIR: 'tg_selected_pair',
     SUPPORTED_PAIRS: [
       { name: 'USDT/USDC', from: 'USDT', to: 'USDC', chain: 'any' },
-      { name: 'KOGI/USDT', from: 'KOGI', to: 'USDT', chain: 'BNB' }
+      { name: 'KOGE/USDT', from: 'KOGE', to: 'USDT', chain: 'BNB' }
     ]
   };
 
@@ -271,10 +271,10 @@
         
         // 添加交易对图标
         const pairIcon = document.createElement('span');
-        const pairColors = {
-          'USDT/USDC': '#10b981',
-          'KOGI/USDT': '#f59e0b'
-        };
+      const pairColors = {
+      'USDT/USDC': '#10b981',
+      'KOGE/USDT': '#f59e0b'
+    };
         pairIcon.style.cssText = `
           width: 8px; height: 8px; border-radius: 50%; 
           background: ${pairColors[pair.name] || '#94a3b8'};
@@ -312,12 +312,12 @@
             savePairConfig();
             UI.logSwap(`交易对更新: ${pair.name}`);
             
-            // 如果选择了KOGI/USDT，强制选择BNB链
-            if (pair.name === 'KOGI/USDT' && selectedChains[0] !== 'BNB') {
+            // 如果选择了KOGE/USDT，强制选择BNB链
+            if (pair.name === 'KOGE/USDT' && selectedChains[0] !== 'BNB') {
               selectedChains = ['BNB'];
               saveChainConfig();
               UI.renderChainSelection();
-              UI.logSwap(`KOGI/USDT 自动选择 BNB 链`);
+              UI.logSwap(`KOGE/USDT 自动选择 BNB 链`);
             }
             
             // 重新渲染所有交易对选项以更新选中状态
@@ -1215,23 +1215,46 @@
     }
 
     const targetChain = selectedChains[0]; // 获取用户选择的链
-    const targetToken = selectedPair.from; // 获取需要查找的代币
+    
+    let targetToken;
+    if (selectedPair.name === 'KOGI/USDT') {
+      // KOGI/USDT: 自动选择当前有的代币（优先KOGI，其次USDT）
+      targetToken = await selectExistingToken();
+    } else {
+      // USDT/USDC: 使用原有的逻辑
+      targetToken = selectedPair.from;
+    }
+
+    if (!targetToken) {
+      UI.logSwap("❌ 未找到目标代币");
+      return false;
+    }
 
     UI.logSwap(`目标链: ${targetChain}，开始查找 ${targetToken}`);
 
-    // 首先尝试点击 "All" 标签
-    const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
-    let allTab = null;
-    tabs.forEach(tab => {
-      if (tab.innerText.trim().toLowerCase() === 'all') allTab = tab;
-    });
+    // 对于USDT/USDC，尝试找到代币标签；对于KOGI/USDT，使用当前页面
+    if (selectedPair.name === 'USDT/USDC') {
+      // 尝试找到代币相关的标签（可能不是"All"）
+      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] div[role="tab"]');
+      let tokenTab = null;
+      
+      for (const tab of tabs) {
+        const tabText = tab.innerText.trim().toLowerCase();
+        if (tabText.includes('token') || tabText.includes('all')) {
+          tokenTab = tab;
+          break;
+        }
+      }
 
-    if (allTab) {
-      allTab.click();
-      UI.logSwap("点击 All 标签");
-      await sleep(SWAP_CONFIG.waitAfterTabClick);
+      if (tokenTab) {
+        tokenTab.click();
+        UI.logSwap(`点击 ${tokenTab.innerText.trim()} 标签`);
+        await sleep(SWAP_CONFIG.waitAfterTabClick);
+      } else {
+        UI.logSwap("未找到代币标签，在当前页面查找");
+      }
     } else {
-      UI.logSwap("未找到 All 标签，尝试直接选择");
+      UI.logSwap("KOGI/USDT 使用当前页面查找");
     }
 
     await sleep(300);
@@ -1293,10 +1316,10 @@
     UI.logSwap(`From 是 ${selectedPair.from}，Receive 选择 ${targetToken}`);
     UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
 
-    // 如果是KOGI/USDT，需要特殊处理：点击Saved标签然后搜索
-    if (selectedPair.name === 'KOGI/USDT') {
-      UI.logSwap('🔍 KOGI/USDT 需要在 Saved 标签中搜索...');
-      return await selectKogiFromSaved();
+    // 如果是KOGE/USDT，需要特殊处理：点击Saved标签然后搜索
+    if (selectedPair.name === 'KOGE/USDT') {
+      UI.logSwap('🔍 KOGE/USDT 需要在 Saved 标签中搜索...');
+      return await selectKogeFromSaved();
     }
 
     // 如果是USDT/USDC，使用原有的Stable标签逻辑
@@ -1364,8 +1387,28 @@
             UI.logSwap(`📋 您选择的链: ${targetChain || '无'}`);
             UI.logSwap(`📋 可用链: ${availableChains.join(', ') || '无'}`);
             UI.logSwap(`💡 请在控制面板中重新选择链或稍后重试`);
-            return false;
-          }
+    return false;
+  }
+
+  async function selectExistingToken() {
+    // 在当前页面上查找已有的代币，优先KOGE，其次USDT
+    const allTokens = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group');
+    
+    for (const token of ['KOGE', 'USDT']) {
+      for (const row of allTokens) {
+        const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
+        const symbol = symbolEl?.innerText?.trim();
+        
+        if (symbol === token) {
+          UI.logSwap(`✅ 发现已持有 ${token}`);
+          return token;
+        }
+      }
+    }
+    
+    UI.logSwap("⚠️ 未找到已持有的代币，尝试默认 KOGE");
+    return 'KOGE'; // 默认尝试KOGE
+  }
         } else {
           // 如果没有链菜单，可能是单链代币或网络问题
           UI.logSwap(`⚠️ 未检测到链选择菜单，可能 ${symbol} 只在单链可用`);
@@ -1381,74 +1424,132 @@
     return false;
   }
 
-  async function selectKogiFromSaved() {
+  async function selectKogeFromSaved() {
     try {
-      // 点击Saved标签
-      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
-      let savedTab = null;
+      // 查找并点击Favorites/Saved标签
+      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] div[role="tab"], [role="dialog"] button[role="tab"]');
+      let favTab = null;
       tabs.forEach(tab => {
-        if (tab.innerText.trim().toLowerCase() === 'saved') savedTab = tab;
+        const tabText = tab.innerText.trim().toLowerCase();
+        if (tabText.includes('favorite') || tabText.includes('saved') || tabText.includes('收藏')) {
+          favTab = tab;
+        }
       });
 
-      if (savedTab) {
-        savedTab.click();
-        UI.logSwap("✅ 点击 Saved 标签");
+      if (favTab) {
+        favTab.click();
+        UI.logSwap(`✅ 点击 ${favTab.innerText.trim()} 标签`);
         await sleep(SWAP_CONFIG.waitAfterTabClick);
       } else {
-        UI.logSwap("❌ 未找到 Saved 标签");
-        return false;
+        UI.logSwap("❌ 未找到 Favorites/Saved 标签，在当前页面搜索");
+        // 直接在当前页面搜索
       }
 
       // 等待页面加载
       await sleep(1000);
 
-      // 查找搜索框
-      const searchInput = document.querySelector('input[placeholder*="Search"], input[placeholder*="搜索"], input[type="text"]');
-      if (searchInput) {
-        searchInput.click();
-        searchInput.value = 'KOGI';
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        UI.logSwap("🔍 搜索 KOGI...");
-        await sleep(1500);
+      // 查找搜索框 - 使用更准确的选择器
+      let searchInput = null;
+      const possibleSelectors = [
+        'input[placeholder*="search" i]',
+        'input[placeholder*="搜索" i]', 
+        'input[placeholder*="Search" i]',
+        'input[type="search"]',
+        'input[id*="search" i]',
+        '.search-input input',
+        '[data-testid*="search"] input',
+        'input[aria-label*="search" i]'
+      ];
+
+      for (const selector of possibleSelectors) {
+        searchInput = document.querySelector(selector);
+        if (searchInput) break;
       }
 
-      // 查找KOGI代币
-      const tokenRows = document.querySelectorAll('[role="dialog"] .relative.group, [role="dialog"] .cursor-pointer');
-      for (const row of tokenRows) {
-        const symbolEl = row.querySelector('.text-sm.text-genius-cream, .text-xs.text-genius-cream\\/60');
-        const symbol = symbolEl?.innerText?.trim();
+      if (searchInput) {
+        // 清空并输入KOGI
+        searchInput.click();
+        searchInput.focus();
+        searchInput.value = '';
+        searchInput.value = 'KOGE';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+        searchInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+        
+        UI.logSwap("🔍 搜索 KOGE...");
+        await sleep(2000); // 增加等待时间
+      } else {
+        UI.logSwap("⚠️ 未找到搜索框，手动查找KOGI");
+      }
 
-        if (symbol === 'KOGI') {
-          UI.logSwap(`找到 KOGI，尝试选择 BNB 链...`);
+      // 查找KOGI代币 - 扩大搜索范围
+      const tokenSelectors = [
+        '[role="dialog"] .relative.group',
+        '[role="dialog"] .cursor-pointer', 
+        '[role="dialog"] [data-testid*="token"]',
+        '[role="dialog"] .token-row',
+        '[role="dialog"] .coin-item',
+        '[role="dialog"] div[class*="token"]'
+      ];
 
-          row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-          await sleep(SWAP_CONFIG.waitForHover);
-
-          const chainMenu = row.querySelector('.genius-shadow');
-          if (chainMenu) {
-            const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
-            for (const opt of chainOptions) {
-              const chainName = opt.querySelector('span')?.innerText?.trim();
-              if (chainName === 'BNB' || chainName === 'Binance') {
-                opt.click();
-                UI.logSwap(`✅ Receive 选择了 KOGI (BNB链)`);
-                return true;
-              }
+      let kogiFound = false;
+      for (const selector of tokenSelectors) {
+        const tokenRows = document.querySelectorAll(selector);
+        for (const row of tokenRows) {
+          const symbolSelectors = [
+            '.text-sm.text-genius-cream',
+            '.text-xs.text-genius-cream\\/60',
+            '.symbol',
+            '.coin-symbol',
+            '[data-testid*="symbol"]'
+          ];
+          
+          let symbol = null;
+          for (const symSelector of symbolSelectors) {
+            const symbolEl = row.querySelector(symSelector);
+            if (symbolEl) {
+              symbol = symbolEl.innerText?.trim();
+              break;
             }
           }
 
-          // 如果没有链菜单，直接点击
-          row.click();
-          UI.logSwap(`✅ Receive 直接选择了 KOGI`);
-          return true;
+          if (symbol === 'KOGE') {
+            UI.logSwap(`找到 KOGE，尝试选择 BNB 链...`);
+
+            // 滚动到可见区域
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            await sleep(500);
+
+            // 鼠标悬停
+            row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            await sleep(SWAP_CONFIG.waitForHover);
+
+            const chainMenu = row.querySelector('.genius-shadow');
+            if (chainMenu) {
+              const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
+              for (const opt of chainOptions) {
+                const chainName = opt.querySelector('span')?.innerText?.trim();
+                if (chainName === 'BNB' || chainName === 'Binance') {
+                  opt.click();
+                  UI.logSwap(`✅ Receive 选择了 KOGE (BNB链)`);
+                  return true;
+                }
+              }
+            }
+
+            // 如果没有链菜单，直接点击
+            row.click();
+            UI.logSwap(`✅ Receive 直接选择了 KOGE`);
+            return true;
+          }
         }
       }
 
-      UI.logSwap("❌ 未找到 KOGI");
+      UI.logSwap("❌ 未找到 KOGE");
       return false;
 
     } catch (error) {
-      UI.logSwap("❌ 搜索 KOGI 时出错: " + error.message);
+      UI.logSwap("❌ 搜索 KOGE 时出错: " + error.message);
       return false;
     }
   }
