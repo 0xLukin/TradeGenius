@@ -1545,6 +1545,15 @@
 
     if (targetRow) {
       UI.logSwap(`✅ 找到 ${targetToken}，点击选择...`);
+      
+      // 使用确切选择器点击 KOGE
+      const exactRow = document.querySelector("#radix-\\:r19\\: > div > div.flex.flex-col > div.w-full.h-\\[350px\\] > div > div > div > div:nth-child(1) > div");
+      if (exactRow) {
+        exactRow.click();
+        UI.logSwap(`✅ Receive 使用确切选择器选择了 ${targetToken}`);
+        return true;
+      }
+      
       targetRow.click();
       UI.logSwap(`✅ Receive 直接选择了 ${targetToken}`);
       return true;
