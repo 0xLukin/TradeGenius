@@ -1213,6 +1213,13 @@
     return allTexts.includes('Amount Exceeds Balance');
   }
 
+  function isSameAssetSwapError() {
+    const allTexts = Array.from(document.querySelectorAll('*'))
+      .map(el => el.innerText || '')
+      .join(' ');
+    return allTexts.includes('The same asset cannot be swapped for itself');
+  }
+
   async function selectExistingToken() {
     try {
       // 在当前页面上查找已有的代币，优先KOGE，其次USDT
@@ -1656,6 +1663,14 @@
           continue;
         }
 
+        // 检查是否同一资产交换错误
+        if (isSameAssetSwapError()) {
+          UI.logSwap("⚠️ 同一资产无法交换，刷新页面后继续...");
+          await sleep(1000);
+          doReload('same_asset_swap');
+          continue;
+        }
+
         // 首先检查是否有Simulation failed错误
         const simFailedBtn = findSimulationFailedBtn();
         if (simFailedBtn) {
@@ -1668,6 +1683,7 @@
         let confirmClicked = false;
         let simFailedDetected = false;
         let balanceIssue = false;
+        let sameAssetIssue = false;
 
         for (let i = 0; i < SWAP_CONFIG.maxRetryConfirm; i++) {
           // 每次重试前检查Simulation failed
@@ -1680,8 +1696,15 @@
 
           // 检查余额不足
           if (isAmountExceedsBalance()) {
-            UI.logSwap("⚠️ 余额不足 (Amount Exceeds Balance)，停止交易");
+            UI.logSwap("⚠️ 余额不足，刷新页面后继续...");
             balanceIssue = true;
+            break;
+          }
+
+          // 检查同一资产交换错误
+          if (isSameAssetSwapError()) {
+            UI.logSwap("⚠️ 同一资产无法交换，刷新页面后继续...");
+            sameAssetIssue = true;
             break;
           }
 
@@ -1699,6 +1722,13 @@
           UI.logSwap("⚠️ 余额不足，刷新页面后继续...");
           await sleep(1000);
           doReload('balance_issue_retry');
+          continue;
+        }
+
+        if (sameAssetIssue) {
+          UI.logSwap("⚠️ 同一资产无法交换，刷新页面后继续...");
+          await sleep(1000);
+          doReload('same_asset_swap_retry');
           continue;
         }
 
