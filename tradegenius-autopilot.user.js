@@ -1206,6 +1206,37 @@
     return !!document.querySelector('[role="dialog"][data-state="open"]');
   }
 
+  async function selectExistingToken() {
+    try {
+      // 在当前页面上查找已有的代币，优先KOGE，其次USDT
+      const allTokens = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group');
+      
+      UI.logSwap(`🔍 在对话框中查找代币，找到 ${allTokens.length} 个元素`);
+      
+      for (const token of ['KOGE', 'USDT']) {
+        for (const row of allTokens) {
+          const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
+          const symbol = symbolEl?.innerText?.trim();
+          
+          UI.logSwap(`  检查: ${symbol}`);
+          
+          if (symbol === token) {
+            UI.logSwap(`✅ 发现已持有 ${token}，点击选择`);
+            row.click();
+            await sleep(500);
+            return token;
+          }
+        }
+      }
+      
+      UI.logSwap("⚠️ 未找到已持有的代币");
+      return null;
+    } catch (error) {
+      UI.logSwap(`❌ selectExistingToken 错误: ${error.message}`);
+      return null;
+    }
+  }
+
   async function selectMaxBalanceToken() {
     try {
       await sleep(SWAP_CONFIG.waitAfterChoose);
