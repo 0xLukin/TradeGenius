@@ -1485,52 +1485,9 @@
       }
 
       if (kogeRow) {
-        UI.logSwap(`✅ 找到 KOGE，点击选择`);
+        UI.logSwap(`✅ 找到 KOGE，点击选择（仅BNB链）`);
         kogeRow.click();
         await sleep(SWAP_CONFIG.waitAfterChoose);
-        
-        // 等待并检查链选择菜单
-        await sleep(500);
-        
-        // 尝试多种方式找到链选择菜单
-        let chainMenu = document.querySelector('.genius-shadow');
-        if (!chainMenu) {
-          chainMenu = document.querySelector('[class*="chain"]');
-        }
-        if (!chainMenu) {
-          chainMenu = document.querySelector('[role="listbox"]');
-        }
-        if (!chainMenu) {
-          // 检查是否点击后直接选择了（没有链菜单）
-          UI.logSwap(`✅ Receive 直接选择了 KOGE`);
-          return true;
-        }
-        
-        UI.logSwap(`🔍 找到链菜单，查找 BNB 选项`);
-        const chainOptions = chainMenu.querySelectorAll('.cursor-pointer, button, [role="option"]');
-        
-        for (const opt of chainOptions) {
-          const chainName = opt.innerText?.trim() || opt.textContent?.trim();
-          UI.logSwap(`  检查链: ${chainName}`);
-          
-          if (chainName && (chainName.includes('BNB') || chainName.includes('Binance'))) {
-            UI.logSwap(`✅ 选择 BNB 链`);
-            opt.click();
-            await sleep(500);
-            return true;
-          }
-        }
-        
-        // 如果没找到BNB，选择第一个可用链
-        if (chainOptions.length > 0) {
-          const firstChain = chainOptions[0].innerText?.trim() || '第一个';
-          UI.logSwap(`⚠️ 未找到 BNB，选择 ${firstChain}`);
-          chainOptions[0].click();
-          await sleep(500);
-          return true;
-        }
-        
-        UI.logSwap(`✅ Receive 直接选择了 KOGE`);
         return true;
       }
 
