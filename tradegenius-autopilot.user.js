@@ -1601,10 +1601,11 @@
 
         await sleep(SWAP_CONFIG.waitAfterMax);
 
-        // 检查是否余额不足
+        // 检查是否余额不足（平台数据未及时更新）
         if (isAmountExceedsBalance()) {
-          UI.logSwap("⚠️ 余额不足 (Amount Exceeds Balance)，停止交易");
-          stopSwapLoop();
+          UI.logSwap("⚠️ 余额不足，刷新页面后继续...");
+          await sleep(1000);
+          doReload('balance_issue');
           continue;
         }
 
@@ -1648,7 +1649,9 @@
         }
 
         if (balanceIssue) {
-          stopSwapLoop();
+          UI.logSwap("⚠️ 余额不足，刷新页面后继续...");
+          await sleep(1000);
+          doReload('balance_issue_retry');
           continue;
         }
 
