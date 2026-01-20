@@ -1217,9 +1217,19 @@
     const targetChain = selectedChains[0]; // 获取用户选择的链
     
     let targetToken;
-    if (selectedPair.name === 'KOGI/USDT') {
-      // KOGI/USDT: 自动选择当前有的代币（优先KOGI，其次USDT）
-      targetToken = await selectExistingToken();
+    let shouldSkipSearch = false;
+    
+    if (selectedPair.name === 'KOGE/USDT') {
+      // KOGE/USDT: 自动选择当前已有的代币（优先KOGE，其次USDT）
+      const existingToken = await selectExistingToken();
+      if (existingToken) {
+        targetToken = existingToken;
+        shouldSkipSearch = true;
+        selectedFromToken = targetToken;
+      } else {
+        // 没找到已持有的代币，尝试KOGE
+        targetToken = 'KOGE';
+      }
     } else {
       // USDT/USDC: 使用原有的逻辑
       targetToken = selectedPair.from;
@@ -1231,6 +1241,12 @@
     }
 
     UI.logSwap(`目标链: ${targetChain}，开始查找 ${targetToken}`);
+    
+    // 如果已经点击了代币，直接返回
+    if (shouldSkipSearch) {
+      UI.logSwap(`✅ From 选择了 ${targetToken}`);
+      return true;
+    }
 
     // 对于USDT/USDC，尝试找到代币标签；对于KOGI/USDT，使用当前页面
     if (selectedPair.name === 'USDT/USDC') {
@@ -1400,34 +1416,33 @@
         const symbol = symbolEl?.innerText?.trim();
         
         if (symbol === token) {
-          UI.logSwap(`✅ 发现已持有 ${token}`);
+          UI.logSwap(`✅ 发现已持有 ${token}，点击选择`);
+          row.click(); // 直接点击选择
           return token;
         }
       }
     }
     
-    UI.logSwap("⚠️ 未找到已持有的代币，尝试默认 KOGE");
-    return 'KOGE'; // 默认尝试KOGE
+    UI.logSwap("⚠️ 未找到已持有的代币");
+    return null;
   }
-        } else {
-          // 如果没有链菜单，可能是单链代币或网络问题
-          UI.logSwap(`⚠️ 未检测到链选择菜单，可能 ${symbol} 只在单链可用`);
-          UI.logSwap(`❌ 请在控制面板中检查链配置或稍后重试`);
-          return false;
-        }
-
-
       }
     }
-
-    UI.logSwap(`⚠️ 未找到 ${targetToken}`);
-    return false;
+    
+    UI.logSwap("⚠️ 未找到已持有的代币");
+    return null;
   }
+
+  UI.logSwap(`⚠️ 未找到 ${targetToken}`);
+  return false;
+}
 
   async function selectKogeFromSaved() {
     try {
+      UI.logSwap("🔍 开始搜索 KOGE...");
+
       // 查找并点击Favorites/Saved标签
-      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] div[role="tab"], [role="dialog"] button[role="tab"]');
+      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] button');
       let favTab = null;
       tabs.forEach(tab => {
         const tabText = tab.innerText.trim().toLowerCase();
@@ -1440,109 +1455,70 @@
         favTab.click();
         UI.logSwap(`✅ 点击 ${favTab.innerText.trim()} 标签`);
         await sleep(SWAP_CONFIG.waitAfterTabClick);
-      } else {
-        UI.logSwap("❌ 未找到 Favorites/Saved 标签，在当前页面搜索");
-        // 直接在当前页面搜索
       }
 
-      // 等待页面加载
-      await sleep(1000);
+      await sleep(800);
 
-      // 查找搜索框 - 使用更准确的选择器
-      let searchInput = null;
-      const possibleSelectors = [
-        'input[placeholder*="search" i]',
-        'input[placeholder*="搜索" i]', 
-        'input[placeholder*="Search" i]',
-        'input[type="search"]',
-        'input[id*="search" i]',
-        '.search-input input',
-        '[data-testid*="search"] input',
-        'input[aria-label*="search" i]'
-      ];
-
-      for (const selector of possibleSelectors) {
-        searchInput = document.querySelector(selector);
-        if (searchInput) break;
-      }
-
-      if (searchInput) {
-        // 清空并输入KOGI
-        searchInput.click();
-        searchInput.focus();
-        searchInput.value = '';
-        searchInput.value = 'KOGE';
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        searchInput.dispatchEvent(new Event('change', { bubbles: true }));
-        searchInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+      // 直接在当前页面查找所有代币行
+      const allRows = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group, [role="dialog"] button[class*="cursor"]');
+      
+      // 先搜索KOGE
+      let kogeRow = null;
+      for (const row of allRows) {
+        const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
+        const symbol = symbolEl?.innerText?.trim();
         
-        UI.logSwap("🔍 搜索 KOGE...");
-        await sleep(2000); // 增加等待时间
-      } else {
-        UI.logSwap("⚠️ 未找到搜索框，手动查找KOGI");
+        if (symbol === 'KOGE') {
+          kogeRow = row;
+          break;
+        }
       }
 
-      // 查找KOGI代币 - 扩大搜索范围
-      const tokenSelectors = [
-        '[role="dialog"] .relative.group',
-        '[role="dialog"] .cursor-pointer', 
-        '[role="dialog"] [data-testid*="token"]',
-        '[role="dialog"] .token-row',
-        '[role="dialog"] .coin-item',
-        '[role="dialog"] div[class*="token"]'
-      ];
-
-      let kogiFound = false;
-      for (const selector of tokenSelectors) {
-        const tokenRows = document.querySelectorAll(selector);
-        for (const row of tokenRows) {
-          const symbolSelectors = [
-            '.text-sm.text-genius-cream',
-            '.text-xs.text-genius-cream\\/60',
-            '.symbol',
-            '.coin-symbol',
-            '[data-testid*="symbol"]'
-          ];
+      // 如果没找到，尝试搜索框
+      if (!kogeRow) {
+        const searchInput = document.querySelector('input[placeholder*="Search" i], input[type="text"]');
+        if (searchInput) {
+          searchInput.click();
+          searchInput.focus();
+          searchInput.value = 'KOGE';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          UI.logSwap("🔍 搜索 KOGE...");
+          await sleep(1500);
           
-          let symbol = null;
-          for (const symSelector of symbolSelectors) {
-            const symbolEl = row.querySelector(symSelector);
-            if (symbolEl) {
-              symbol = symbolEl.innerText?.trim();
+          // 再次查找
+          const newRows = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group');
+          for (const row of newRows) {
+            const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
+            const symbol = symbolEl?.innerText?.trim();
+            
+            if (symbol === 'KOGE') {
+              kogeRow = row;
               break;
             }
           }
+        }
+      }
 
-          if (symbol === 'KOGE') {
-            UI.logSwap(`找到 KOGE，尝试选择 BNB 链...`);
-
-            // 滚动到可见区域
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            await sleep(500);
-
-            // 鼠标悬停
-            row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-            await sleep(SWAP_CONFIG.waitForHover);
-
-            const chainMenu = row.querySelector('.genius-shadow');
-            if (chainMenu) {
-              const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
-              for (const opt of chainOptions) {
-                const chainName = opt.querySelector('span')?.innerText?.trim();
-                if (chainName === 'BNB' || chainName === 'Binance') {
-                  opt.click();
-                  UI.logSwap(`✅ Receive 选择了 KOGE (BNB链)`);
-                  return true;
-                }
-              }
+      if (kogeRow) {
+        UI.logSwap(`✅ 找到 KOGE，点击选择`);
+        kogeRow.click();
+        await sleep(SWAP_CONFIG.waitAfterChoose);
+        
+        // 检查是否需要选择链
+        const chainMenu = document.querySelector('.genius-shadow, [class*="chain"]');
+        if (chainMenu) {
+          const chainOptions = chainMenu.querySelectorAll('.cursor-pointer, button');
+          for (const opt of chainOptions) {
+            const chainName = opt.querySelector('span')?.innerText?.trim();
+            if (chainName && (chainName.includes('BNB') || chainName.includes('Binance'))) {
+              opt.click();
+              UI.logSwap(`✅ 选择 BNB 链`);
+              return true;
             }
-
-            // 如果没有链菜单，直接点击
-            row.click();
-            UI.logSwap(`✅ Receive 直接选择了 KOGE`);
-            return true;
           }
         }
+        
+        return true;
       }
 
       UI.logSwap("❌ 未找到 KOGE");
