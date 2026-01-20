@@ -1396,13 +1396,7 @@
       UI.logSwap(`From 是 ${selectedPair.from}，Receive 选择 ${targetToken}`);
       UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
 
-      // 如果是KOGE/USDT，需要特殊处理：点击Saved标签然后搜索
-      if (selectedPair.name === 'KOGE/USDT') {
-        UI.logSwap('🔍 KOGE/USDT 需要在 Saved 标签中搜索...');
-        return await selectKogeFromSaved();
-      }
-
-      // USDT/USDC: 使用原有的Stable标签逻辑
+      // 使用 Stable 标签逻辑（USDT/USDC 和 KOGE/USDT 共用）
       const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
       let stableTab = null;
       tabs.forEach(tab => {
@@ -1462,81 +1456,39 @@
     }
   }
 
+  // KOGE/USDT 专用：使用 Stable 标签选择 USDT（与 USDT/USDC 相同逻辑）
   async function selectKogeFromSaved() {
-    try {
-      const targetToken = selectedPair.to; // USDT
-      UI.logSwap(`🔍 开始搜索 ${targetToken}...`);
+    const targetToken = 'USDT';
+    UI.logSwap(`🔍 KOGE/USDT: 在 Stable 标签中查找 ${targetToken}...`);
 
-      // 查找并点击Favorites/Saved标签
-      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] button');
-      let favTab = null;
-      tabs.forEach(tab => {
-        const tabText = tab.innerText.trim().toLowerCase();
-        if (tabText.includes('favorite') || tabText.includes('saved') || tabText.includes('收藏')) {
-          favTab = tab;
-        }
-      });
+    const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
+    let stableTab = null;
+    tabs.forEach(tab => {
+      if (tab.innerText.trim().toLowerCase() === 'stable') stableTab = tab;
+    });
 
-      if (favTab) {
-        favTab.click();
-        UI.logSwap(`✅ 点击 ${favTab.innerText.trim()} 标签`);
-        await sleep(SWAP_CONFIG.waitAfterTabClick);
-      }
+    if (stableTab) {
+      stableTab.click();
+      UI.logSwap("点击 Stable 标签");
+      await sleep(SWAP_CONFIG.waitAfterTabClick);
+    }
 
-      await sleep(800);
+    await sleep(300);
 
-      // 查找目标代币（USDT）
-      const allRows = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group, [role="dialog"] button[class*="cursor"]');
-      
-      let targetRow = null;
-      for (const row of allRows) {
-        const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
-        const symbol = symbolEl?.innerText?.trim();
-        
-        if (symbol === targetToken) {
-          targetRow = row;
-          UI.logSwap(`  找到 ${targetToken} 行`);
-          break;
-        }
-      }
+    const tokenRows = document.querySelectorAll('[role="dialog"] .relative.group');
+    for (const row of tokenRows) {
+      const symbolEl = row.querySelector('.text-sm.text-genius-cream');
+      const symbol = symbolEl?.innerText?.trim();
 
-      // 如果没找到，尝试搜索框
-      if (!targetRow) {
-        const searchInput = document.querySelector('input[placeholder*="Search" i], input[type="text"]');
-        if (searchInput) {
-          searchInput.click();
-          searchInput.focus();
-          searchInput.value = targetToken;
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          UI.logSwap(`🔍 搜索 ${targetToken}...`);
-          await sleep(1500);
-          
-          // 再次查找
-          const newRows = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group');
-          for (const row of newRows) {
-            const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
-            const symbol = symbolEl?.innerText?.trim();
-            
-            if (symbol === targetToken) {
-              targetRow = row;
-              UI.logSwap(`  搜索后找到 ${targetToken}`);
-              break;
-            }
-          }
-        }
-      }
+      if (symbol === targetToken) {
+        UI.logSwap(`找到 ${symbol}，尝试选择链...`);
 
-      if (targetRow) {
-        UI.logSwap(`✅ 找到 ${targetToken}，点击选择...`);
-        
-        // 点击代币行
-        targetRow.click();
-        await sleep(SWAP_CONFIG.waitAfterChoose);
-        
-        // 选择BNB链
-        const chainMenu = document.querySelector('.genius-shadow, [class*="chain"]');
+        row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+        await sleep(SWAP_CONFIG.waitForHover);
+
+        const chainMenu = row.querySelector('.genius-shadow');
         if (chainMenu) {
-          const chainOptions = chainMenu.querySelectorAll('.cursor-pointer, button');
+          const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
           for (const opt of chainOptions) {
             const chainName = opt.querySelector('span')?.innerText?.trim();
             if (chainName && (chainName.includes('BNB') || chainName.includes('Binance'))) {
@@ -1545,28 +1497,16 @@
               return true;
             }
           }
-          
-          // 如果没找到BNB，选择第一个
-          if (chainOptions.length > 0) {
-            const firstChain = chainOptions[0].innerText?.trim() || '第一个';
-            UI.logSwap(`⚠️ 未找到 BNB，选择 ${firstChain}`);
-            chainOptions[0].click();
-            await sleep(500);
-            return true;
-          }
         }
-        
+
+        row.click();
         UI.logSwap(`✅ Receive 直接选择了 ${targetToken}`);
         return true;
       }
-
-      UI.logSwap(`❌ 未找到 ${targetToken}`);
-      return false;
-
-    } catch (error) {
-      UI.logSwap(`❌ 搜索 ${selectedPair.to} 时出错: ${error.message}`);
-      return false;
     }
+
+    UI.logSwap(`❌ 未找到 ${targetToken}`);
+    return false;
   }
 
   async function startSwapLoop() {
