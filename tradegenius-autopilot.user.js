@@ -1399,15 +1399,15 @@
         return false;
       }
 
-      // KOGE/USDT: 根据 from 决定选择逻辑
+      // KOGE/USDT: 根据实际选择的 from 决定选择逻辑
       if (selectedPair.name === 'KOGE/USDT') {
-        if (selectedPair.from === 'KOGE') {
-          // From 是 KOGE → Receive 选择 USDT（Stable 标签）
-          UI.logSwap("🔍 KOGE/USDT: From 是 KOGE，Receive 选择 USDT");
+        if (selectedFromToken === 'KOGE') {
+          // 实际 From 是 KOGE → Receive 选择 USDT（Stable 标签）
+          UI.logSwap(`🔍 KOGE/USDT: From 是 ${selectedFromToken}，Receive 选择 USDT`);
           return await selectUSDTFromStable();
         } else {
-          // From 是 USDT → Receive 选择 KOGE（Saved 标签）
-          UI.logSwap("🔍 KOGE/USDT: From 是 USDT，Receive 选择 KOGE");
+          // 实际 From 是 USDT → Receive 选择 KOGE（Saved 标签）
+          UI.logSwap(`🔍 KOGE/USDT: From 是 ${selectedFromToken}，Receive 选择 KOGE`);
           return await selectKOGEFromSaved();
         }
       }
