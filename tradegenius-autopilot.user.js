@@ -63,6 +63,8 @@
   // ========= Swap Bot 變數 =========
   let isSwapRunning = false;
   let selectedFromToken = null;
+  let selectedToToken = null;
+  let selectedPair = null;
   let loopPromise = null;
   let selectedChains = ['BNB']; // 默认选择BNB链
   let isPanelCollapsed = false; // 面板折叠状态
@@ -84,6 +86,15 @@
     }
   };
 
+  // ========= Trading Pair 配置 =========
+  const PAIR_CONFIG = {
+    KEY_SELECTED_PAIR: 'tg_selected_pair',
+    SUPPORTED_PAIRS: [
+      { name: 'USDT/USDC', from: 'USDT', to: 'USDC', chain: 'any' },
+      { name: 'KOGI/USDT', from: 'KOGI', to: 'USDT', chain: 'BNB' }
+    ]
+  };
+
   // 加载用户选择的链配置
   function loadChainConfig() {
     const saved = localStorage.getItem(CHAIN_CONFIG.KEY_SELECTED_CHAIN);
@@ -99,6 +110,29 @@
     localStorage.setItem(CHAIN_CONFIG.KEY_SELECTED_CHAIN, selectedChains[0] || 'BNB');
   }
 
+  // 加载交易对配置
+  function loadPairConfig() {
+    const saved = localStorage.getItem(PAIR_CONFIG.KEY_SELECTED_PAIR);
+    if (saved) {
+      const pair = PAIR_CONFIG.SUPPORTED_PAIRS.find(p => p.name === saved);
+      if (pair) {
+        selectedPair = pair;
+        selectedFromToken = pair.from;
+        selectedToToken = pair.to;
+        return;
+      }
+    }
+    // 默认选择 USDT/USDC
+    selectedPair = PAIR_CONFIG.SUPPORTED_PAIRS[0];
+    selectedFromToken = selectedPair.from;
+    selectedToToken = selectedPair.to;
+  }
+
+  // 保存交易对配置
+  function savePairConfig() {
+    localStorage.setItem(PAIR_CONFIG.KEY_SELECTED_PAIR, selectedPair.name);
+  }
+
   // ========= 合併 UI 面板 =========
   const UI = {
     root: null,
@@ -107,6 +141,8 @@
     swapStatusText: null,
     swapBtnToggle: null,
     swapLogEl: null,
+    // Trading Pair UI
+    pairContainer: null,
     // Chain Selection UI
     chainCheckboxContainer: null,
     // Refresh UI
@@ -204,6 +240,93 @@
           leftElement.textContent = at ? fmtLeft(leftMs) : 'Left: -';
         }
       }
+    },
+
+    renderPairSelection() {
+      if (!this.pairContainer) return;
+      
+      this.pairContainer.innerHTML = '';
+
+      PAIR_CONFIG.SUPPORTED_PAIRS.forEach(pair => {
+        const label = document.createElement('label');
+        label.style.cssText = `
+          display: inline-flex; align-items: center; gap: 6px; 
+          cursor: pointer; padding: 6px 12px; border-radius: 6px;
+          background: ${selectedPair?.name === pair.name ? 'rgba(251, 146, 60, 0.2)' : 'rgba(0, 0, 0, 0.3)'};
+          border: 1px solid ${selectedPair?.name === pair.name ? 'rgba(251, 146, 60, 0.4)' : 'rgba(255, 255, 255, 0.1)'};
+          transition: all 0.2s ease; font-size: 11px; font-weight: 500;
+          color: ${selectedPair?.name === pair.name ? '#f1f5f9' : '#94a3b8'};
+        `;
+        
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'pair-selection'; // 单选必须有相同的name
+        radio.checked = selectedPair?.name === pair.name;
+        radio.style.cssText = `margin:0; cursor:pointer; opacity: 0; position: absolute;`;
+        
+        const span = document.createElement('span');
+        span.style.cssText = `
+          display: flex; align-items: center; gap: 4px;
+        `;
+        
+        // 添加交易对图标
+        const pairIcon = document.createElement('span');
+        const pairColors = {
+          'USDT/USDC': '#10b981',
+          'KOGI/USDT': '#f59e0b'
+        };
+        pairIcon.style.cssText = `
+          width: 8px; height: 8px; border-radius: 50%; 
+          background: ${pairColors[pair.name] || '#94a3b8'};
+          box-shadow: 0 0 6px ${pairColors[pair.name] || '#94a3b8'}40;
+        `;
+        
+        const pairText = document.createElement('span');
+        pairText.textContent = pair.name;
+        
+        span.appendChild(pairIcon);
+        span.appendChild(pairText);
+        
+        label.appendChild(radio);
+        label.appendChild(span);
+        
+        // 悬停效果
+        label.addEventListener('mouseenter', () => {
+          if (selectedPair?.name !== pair.name) {
+            label.style.background = 'rgba(0, 0, 0, 0.4)';
+            label.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }
+        });
+        label.addEventListener('mouseleave', () => {
+          if (selectedPair?.name !== pair.name) {
+            label.style.background = 'rgba(0, 0, 0, 0.3)';
+            label.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          }
+        });
+        
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            selectedPair = pair;
+            selectedFromToken = pair.from;
+            selectedToToken = pair.to;
+            savePairConfig();
+            UI.logSwap(`交易对更新: ${pair.name}`);
+            
+            // 如果选择了KOGI/USDT，强制选择BNB链
+            if (pair.name === 'KOGI/USDT' && selectedChains[0] !== 'BNB') {
+              selectedChains = ['BNB'];
+              saveChainConfig();
+              UI.renderChainSelection();
+              UI.logSwap(`KOGI/USDT 自动选择 BNB 链`);
+            }
+            
+            // 重新渲染所有交易对选项以更新选中状态
+            this.renderPairSelection();
+          }
+        });
+        
+        this.pairContainer.appendChild(label);
+      });
     },
 
     renderChainSelection() {
@@ -537,6 +660,30 @@
       padding: 0; border-bottom: 1px solid rgba(255,255,255,0.08);
     `;
 
+    // ========= Trading Pair Selection Section =========
+    const pairSection = document.createElement('div');
+    pairSection.style.cssText = `
+      margin: 0; padding: 16px 20px; 
+      background: linear-gradient(90deg, rgba(251, 146, 60, 0.03) 0%, rgba(250, 204, 21, 0.03) 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    `;
+
+    const pairTitle = document.createElement('div');
+    pairTitle.style.cssText = `
+      font-size: 12px; font-weight: 600; color: #e2e8f0; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    `;
+    pairTitle.innerHTML = `
+      <span style="width: 4px; height: 4px; background: #f59e0b; border-radius: 50%;"></span>
+      交易对选择
+    `;
+
+    const pairContainer = document.createElement('div');
+    pairContainer.style.cssText = `display:flex; gap: 8px; flex-wrap: wrap;`;
+
+    pairSection.appendChild(pairTitle);
+    pairSection.appendChild(pairContainer);
+
     // ========= Chain Selection Section =========
     const chainSection = document.createElement('div');
     chainSection.style.cssText = `
@@ -668,6 +815,7 @@
 
     logSection.appendChild(swapLog);
 
+    swapBody.appendChild(pairSection);
     swapBody.appendChild(chainSection);
     swapBody.appendChild(authorInfo);
     swapBody.appendChild(tipsSection);
@@ -844,6 +992,7 @@
     UI.swapStatusText = swapStatus;
     UI.swapBtnToggle = swapBtn;
     UI.swapLogEl = swapLog;
+    UI.pairContainer = pairContainer;
     UI.chainCheckboxContainer = chainCheckboxContainer;
     UI.refreshDot = refreshDot;
     UI.refreshStatus = refreshStatus;
@@ -855,6 +1004,7 @@
     UI.mainContent = mainContent;
 
     UI.setSwapRunning(false);
+    UI.renderPairSelection();
     UI.renderChainSelection();
     UI.renderRefresh();
 
@@ -1059,13 +1209,15 @@
   async function selectMaxBalanceToken() {
     await sleep(SWAP_CONFIG.waitAfterChoose);
 
-    const targetChain = selectedChains[0]; // 获取用户选择的链
-    if (!targetChain) {
-      UI.logSwap("❌ 未选择目标链，请先在控制面板选择链");
+    if (!selectedPair) {
+      UI.logSwap("❌ 未选择交易对，请先在控制面板选择交易对");
       return false;
     }
 
-    UI.logSwap(`目标链: ${targetChain}，开始查找 USDT/USDC`);
+    const targetChain = selectedChains[0]; // 获取用户选择的链
+    const targetToken = selectedPair.from; // 获取需要查找的代币
+
+    UI.logSwap(`目标链: ${targetChain}，开始查找 ${targetToken}`);
 
     // 首先尝试点击 "All" 标签
     const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
@@ -1102,7 +1254,8 @@
       const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60');
       const symbol = symbolEl?.innerText?.trim();
 
-      if (symbol === 'USDT' || symbol === 'USDC') {
+      // 根据选择的交易对查找对应代币
+      if (symbol === targetToken) {
         const balanceText = row.querySelector('.flex.flex-nowrap.justify-end')?.innerText || '';
         const balanceMatch = balanceText.match(/[\d,\.]+/);
         if (balanceMatch) {
@@ -1131,10 +1284,22 @@
   async function selectReceiveToken() {
     await sleep(SWAP_CONFIG.waitAfterChoose);
 
-    const targetToken = selectedFromToken === 'USDT' ? 'USDC' : 'USDT';
-    UI.logSwap(`From 是 ${selectedFromToken}，Receive 选择 ${targetToken}`);
+    if (!selectedPair) {
+      UI.logSwap("❌ 未选择交易对，请先在控制面板选择交易对");
+      return false;
+    }
+
+    const targetToken = selectedPair.to; // 获取目标代币
+    UI.logSwap(`From 是 ${selectedPair.from}，Receive 选择 ${targetToken}`);
     UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
 
+    // 如果是KOGI/USDT，需要特殊处理：点击Saved标签然后搜索
+    if (selectedPair.name === 'KOGI/USDT') {
+      UI.logSwap('🔍 KOGI/USDT 需要在 Saved 标签中搜索...');
+      return await selectKogiFromSaved();
+    }
+
+    // 如果是USDT/USDC，使用原有的Stable标签逻辑
     const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
     let stableTab = null;
     tabs.forEach(tab => {
@@ -1216,6 +1381,78 @@
     return false;
   }
 
+  async function selectKogiFromSaved() {
+    try {
+      // 点击Saved标签
+      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
+      let savedTab = null;
+      tabs.forEach(tab => {
+        if (tab.innerText.trim().toLowerCase() === 'saved') savedTab = tab;
+      });
+
+      if (savedTab) {
+        savedTab.click();
+        UI.logSwap("✅ 点击 Saved 标签");
+        await sleep(SWAP_CONFIG.waitAfterTabClick);
+      } else {
+        UI.logSwap("❌ 未找到 Saved 标签");
+        return false;
+      }
+
+      // 等待页面加载
+      await sleep(1000);
+
+      // 查找搜索框
+      const searchInput = document.querySelector('input[placeholder*="Search"], input[placeholder*="搜索"], input[type="text"]');
+      if (searchInput) {
+        searchInput.click();
+        searchInput.value = 'KOGI';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        UI.logSwap("🔍 搜索 KOGI...");
+        await sleep(1500);
+      }
+
+      // 查找KOGI代币
+      const tokenRows = document.querySelectorAll('[role="dialog"] .relative.group, [role="dialog"] .cursor-pointer');
+      for (const row of tokenRows) {
+        const symbolEl = row.querySelector('.text-sm.text-genius-cream, .text-xs.text-genius-cream\\/60');
+        const symbol = symbolEl?.innerText?.trim();
+
+        if (symbol === 'KOGI') {
+          UI.logSwap(`找到 KOGI，尝试选择 BNB 链...`);
+
+          row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+          await sleep(SWAP_CONFIG.waitForHover);
+
+          const chainMenu = row.querySelector('.genius-shadow');
+          if (chainMenu) {
+            const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
+            for (const opt of chainOptions) {
+              const chainName = opt.querySelector('span')?.innerText?.trim();
+              if (chainName === 'BNB' || chainName === 'Binance') {
+                opt.click();
+                UI.logSwap(`✅ Receive 选择了 KOGI (BNB链)`);
+                return true;
+              }
+            }
+          }
+
+          // 如果没有链菜单，直接点击
+          row.click();
+          UI.logSwap(`✅ Receive 直接选择了 KOGI`);
+          return true;
+        }
+      }
+
+      UI.logSwap("❌ 未找到 KOGI");
+      return false;
+
+    } catch (error) {
+      UI.logSwap("❌ 搜索 KOGI 时出错: " + error.message);
+      return false;
+    }
+  }
+
   async function startSwapLoop() {
     if (window.botRunning) {
       UI.logSwap("⚠️ 脚本已经在运行了！");
@@ -1245,9 +1482,9 @@
 
         const chooseBtns = findChooseBtns();
         if (chooseBtns.length > 0) {
-          UI.logSwap(`📌 检测到 ${chooseBtns.length} 个 Choose，开始选币...`);
+          UI.logSwap(`📌 检测到 ${chooseBtns.length} 个 Choose，开始选币 ${selectedPair?.name || ''}...`);
 
-          selectedFromToken = null;
+          selectedFromToken = selectedPair?.from || null;
 
           chooseBtns[0].click();
           UI.logSwap("点击第一个 Choose (From)");
@@ -1399,6 +1636,7 @@
   // ========= 初始化 =========
   function init() {
     loadChainConfig(); // 加载链配置
+    loadPairConfig(); // 加载交易对配置
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
@@ -1414,7 +1652,7 @@
     }
     
     const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
-    UI.logSwap(`Loaded. 选择链: ${selectedChains[0] || '未选择'}. Click Start or press ${shortcut}.`);
+    UI.logSwap(`Loaded. 交易对: ${selectedPair?.name || '未选择'}, 链: ${selectedChains[0] || '未选择'}. Click Start or press ${shortcut}.`);
   }
 
   if (document.readyState === 'loading') {
