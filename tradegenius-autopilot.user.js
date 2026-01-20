@@ -1343,6 +1343,85 @@
     }
   }
 
+  async function selectReceiveToken() {
+    try {
+      await sleep(SWAP_CONFIG.waitAfterChoose);
+
+      if (!selectedPair) {
+        UI.logSwap("❌ 未选择交易对，请先在控制面板选择交易对");
+        return false;
+      }
+
+      const targetToken = selectedPair.to;
+      UI.logSwap(`From 是 ${selectedPair.from}，Receive 选择 ${targetToken}`);
+      UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
+
+      // 如果是KOGE/USDT，需要特殊处理：点击Saved标签然后搜索
+      if (selectedPair.name === 'KOGE/USDT') {
+        UI.logSwap('🔍 KOGE/USDT 需要在 Saved 标签中搜索...');
+        return await selectKogeFromSaved();
+      }
+
+      // USDT/USDC: 使用原有的Stable标签逻辑
+      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
+      let stableTab = null;
+      tabs.forEach(tab => {
+        if (tab.innerText.trim().toLowerCase() === 'stable') stableTab = tab;
+      });
+
+      if (stableTab) {
+        stableTab.click();
+        UI.logSwap("点击 Stable 标签");
+        await sleep(SWAP_CONFIG.waitAfterTabClick);
+      } else {
+        UI.logSwap("未找到 Stable 标签，尝试直接选择");
+      }
+
+      await sleep(300);
+
+      const tokenRows = document.querySelectorAll('[role="dialog"] .relative.group');
+      for (const row of tokenRows) {
+        const symbolEl = row.querySelector('.text-sm.text-genius-cream');
+        const symbol = symbolEl?.innerText?.trim();
+
+        if (symbol === targetToken) {
+          UI.logSwap(`找到 ${symbol}，尝试选择链...`);
+
+          row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+          await sleep(SWAP_CONFIG.waitForHover);
+
+          const chainMenu = row.querySelector('.genius-shadow');
+          if (chainMenu) {
+            const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
+            const targetChain = selectedChains[0];
+            if (targetChain) {
+              for (const opt of chainOptions) {
+                const chainName = opt.querySelector('span')?.innerText?.trim();
+                if (CHAIN_CONFIG.CHAIN_ALIASES[targetChain].some(alias => 
+                    chainName?.toLowerCase() === alias.toLowerCase())) {
+                  opt.click();
+                  UI.logSwap(`✅ Receive 选择了 ${symbol} (${targetChain}链)`);
+                  return true;
+                }
+              }
+            }
+          }
+
+          row.click();
+          UI.logSwap(`✅ Receive 直接选择了 ${symbol}`);
+          return true;
+        }
+      }
+
+      UI.logSwap(`⚠️ 未找到 ${targetToken}`);
+      return false;
+
+    } catch (error) {
+      UI.logSwap(`❌ selectReceiveToken 错误: ${error.message}`);
+      return false;
+    }
+  }
+
   async function selectKogeFromSaved() {
     try {
       UI.logSwap("🔍 开始搜索 KOGE...");
