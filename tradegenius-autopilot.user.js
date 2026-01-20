@@ -1207,235 +1207,110 @@
   }
 
   async function selectMaxBalanceToken() {
-    await sleep(SWAP_CONFIG.waitAfterChoose);
+    try {
+      await sleep(SWAP_CONFIG.waitAfterChoose);
 
-    if (!selectedPair) {
-      UI.logSwap("❌ 未选择交易对，请先在控制面板选择交易对");
-      return false;
-    }
-
-    const targetChain = selectedChains[0]; // 获取用户选择的链
-    
-    let targetToken;
-    let shouldSkipSearch = false;
-    
-    if (selectedPair.name === 'KOGE/USDT') {
-      // KOGE/USDT: 自动选择当前已有的代币（优先KOGE，其次USDT）
-      const existingToken = await selectExistingToken();
-      if (existingToken) {
-        targetToken = existingToken;
-        shouldSkipSearch = true;
-        selectedFromToken = targetToken;
-      } else {
-        // 没找到已持有的代币，尝试KOGE
-        targetToken = 'KOGE';
+      if (!selectedPair) {
+        UI.logSwap("❌ 未选择交易对，请先在控制面板选择交易对");
+        return false;
       }
-    } else {
-      // USDT/USDC: 使用原有的逻辑
-      targetToken = selectedPair.from;
-    }
 
-    if (!targetToken) {
-      UI.logSwap("❌ 未找到目标代币");
-      return false;
-    }
-
-    UI.logSwap(`目标链: ${targetChain}，开始查找 ${targetToken}`);
-    
-    // 如果已经点击了代币，直接返回
-    if (shouldSkipSearch) {
-      UI.logSwap(`✅ From 选择了 ${targetToken}`);
-      return true;
-    }
-
-    // 对于USDT/USDC，尝试找到代币标签；对于KOGI/USDT，使用当前页面
-    if (selectedPair.name === 'USDT/USDC') {
-      // 尝试找到代币相关的标签（可能不是"All"）
-      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] div[role="tab"]');
-      let tokenTab = null;
+      const targetChain = selectedChains[0]; // 获取用户选择的链
       
-      for (const tab of tabs) {
+      let targetToken;
+      let shouldSkipSearch = false;
+      
+      if (selectedPair.name === 'KOGE/USDT') {
+        // KOGE/USDT: 自动选择当前已有的代币（优先KOGE，其次USDT）
+        UI.logSwap(`🔍 KOGE/USDT 模式：查找已持有的代币`);
+        const existingToken = await selectExistingToken();
+        if (existingToken) {
+          targetToken = existingToken;
+          shouldSkipSearch = true;
+          selectedFromToken = targetToken;
+          return true; // 已点击选择，直接返回
+        } else {
+          // 没找到已持有的代币
+          UI.logSwap("⚠️ 未找到已持有的代币，尝试默认 KOGE");
+          targetToken = 'KOGE';
+        }
+      } else {
+        // USDT/USDC: 使用原有的逻辑
+        targetToken = selectedPair.from;
+      }
+
+      if (!targetToken) {
+        UI.logSwap("❌ 未找到目标代币");
+        return false;
+      }
+
+      UI.logSwap(`目标链: ${targetChain}，开始查找 ${targetToken}`);
+      
+      // USDT/USDC 逻辑：点击 All 标签，然后选择链
+      const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
+      let allTab = null;
+      tabs.forEach(tab => {
         const tabText = tab.innerText.trim().toLowerCase();
         if (tabText.includes('token') || tabText.includes('all')) {
-          tokenTab = tab;
-          break;
+          allTab = tab;
         }
-      }
+      });
 
-      if (tokenTab) {
-        tokenTab.click();
-        UI.logSwap(`点击 ${tokenTab.innerText.trim()} 标签`);
+      if (allTab) {
+        allTab.click();
+        UI.logSwap(`点击 ${allTab.innerText.trim()} 标签`);
         await sleep(SWAP_CONFIG.waitAfterTabClick);
-      } else {
-        UI.logSwap("未找到代币标签，在当前页面查找");
       }
-    } else {
-      UI.logSwap("KOGI/USDT 使用当前页面查找");
-    }
 
-    await sleep(300);
+      await sleep(300);
 
-    // 查找链标签
-    tabs.forEach(tab => {
-      if (tab.innerText.trim().toLowerCase() === targetChain.toLowerCase()) {
-        tab.click();
-        UI.logSwap(`点击 ${targetChain} 标签`);
-      }
-    });
-    await sleep(SWAP_CONFIG.waitAfterTabClick);
+      // 选择链
+      tabs.forEach(tab => {
+        if (tab.innerText.trim().toLowerCase() === targetChain.toLowerCase()) {
+          tab.click();
+          UI.logSwap(`点击 ${targetChain} 标签`);
+        }
+      });
+      await sleep(SWAP_CONFIG.waitAfterTabClick);
 
-    const tokenRows = document.querySelectorAll('[role="dialog"] .cursor-pointer');
-    let maxBalance = -1;
-    let targetRow = null;
-    let targetSymbol = null;
+      // 查找代币
+      const tokenRows = document.querySelectorAll('[role="dialog"] .cursor-pointer');
+      let maxBalance = -1;
+      let targetRow = null;
 
-    tokenRows.forEach(row => {
-      const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60');
-      const symbol = symbolEl?.innerText?.trim();
+      for (const row of tokenRows) {
+        const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60');
+        const symbol = symbolEl?.innerText?.trim();
 
-      // 根据选择的交易对查找对应代币
-      if (symbol === targetToken) {
-        const balanceText = row.querySelector('.flex.flex-nowrap.justify-end')?.innerText || '';
-        const balanceMatch = balanceText.match(/[\d,\.]+/);
-        if (balanceMatch) {
-          const balance = parseFloat(balanceMatch[0].replace(/,/g, ''));
-          UI.logSwap(`发现 ${symbol}: ${balance}`);
-          if (balance > maxBalance) {
-            maxBalance = balance;
-            targetRow = row;
-            targetSymbol = symbol;
+        if (symbol === targetToken) {
+          const balanceText = row.querySelector('.flex.flex-nowrap.justify-end')?.innerText || '';
+          const balanceMatch = balanceText.match(/[\d,\.]+/);
+          if (balanceMatch) {
+            const balance = parseFloat(balanceMatch[0].replace(/,/g, ''));
+            UI.logSwap(`发现 ${symbol}: ${balance}`);
+            if (balance > maxBalance) {
+              maxBalance = balance;
+              targetRow = row;
+            }
           }
         }
       }
-    });
 
-    if (targetRow) {
-      targetRow.click();
-      selectedFromToken = targetSymbol;
-      UI.logSwap(`✅ From 选择了 ${targetSymbol} (${targetChain}链, 余额: ${maxBalance})`);
-      return true;
-    }
+      if (targetRow) {
+        targetRow.click();
+        selectedFromToken = targetToken;
+        UI.logSwap(`✅ From 选择了 ${targetToken} (余额: ${maxBalance})`);
+        return true;
+      }
 
-    UI.logSwap(`⚠️ 在 ${targetChain} 链上未找到 USDT/USDC`);
-    return false;
-  }
-
-  async function selectReceiveToken() {
-    await sleep(SWAP_CONFIG.waitAfterChoose);
-
-    if (!selectedPair) {
-      UI.logSwap("❌ 未选择交易对，请先在控制面板选择交易对");
+      UI.logSwap(`⚠️ 在 ${targetChain} 链上未找到 ${targetToken}`);
+      return false;
+      
+    } catch (error) {
+      UI.logSwap(`❌ selectMaxBalanceToken 错误: ${error.message}`);
       return false;
     }
-
-    const targetToken = selectedPair.to; // 获取目标代币
-    UI.logSwap(`From 是 ${selectedPair.from}，Receive 选择 ${targetToken}`);
-    UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
-
-    // 如果是KOGE/USDT，需要特殊处理：点击Saved标签然后搜索
-    if (selectedPair.name === 'KOGE/USDT') {
-      UI.logSwap('🔍 KOGE/USDT 需要在 Saved 标签中搜索...');
-      return await selectKogeFromSaved();
-    }
-
-    // 如果是USDT/USDC，使用原有的Stable标签逻辑
-    const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
-    let stableTab = null;
-    tabs.forEach(tab => {
-      if (tab.innerText.trim().toLowerCase() === 'stable') stableTab = tab;
-    });
-
-    if (stableTab) {
-      stableTab.click();
-      UI.logSwap("点击 Stable 标签");
-      await sleep(SWAP_CONFIG.waitAfterTabClick);
-    } else {
-      UI.logSwap("未找到 Stable 标签，尝试直接选择");
-    }
-
-    await sleep(300);
-
-    const tokenRows = document.querySelectorAll('[role="dialog"] .relative.group');
-    for (const row of tokenRows) {
-      const symbolEl = row.querySelector('.text-sm.text-genius-cream');
-      const symbol = symbolEl?.innerText?.trim();
-
-      if (symbol === targetToken) {
-        UI.logSwap(`找到 ${symbol}，尝试选择链...`);
-
-        row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-        await sleep(SWAP_CONFIG.waitForHover);
-
-        const chainMenu = row.querySelector('.genius-shadow');
-        if (chainMenu) {
-          const chainOptions = chainMenu.querySelectorAll('.cursor-pointer');
-          let chainSelected = false;
-
-          // 收集所有可用链的名称
-          const availableChains = [];
-          chainOptions.forEach(opt => {
-            const chainName = opt.querySelector('span')?.innerText?.trim();
-            if (chainName) {
-              availableChains.push(chainName);
-            }
-          });
-
-          // 尝试选择用户配置的单个链
-          const targetChain = selectedChains[0]; // 单选，只取第一个
-          if (targetChain) {
-            for (const opt of chainOptions) {
-              const chainName = opt.querySelector('span')?.innerText?.trim();
-              
-              // 检查链名称是否匹配目标链（包括别名）
-              if (CHAIN_CONFIG.CHAIN_ALIASES[targetChain].some(alias => 
-                  chainName?.toLowerCase() === alias.toLowerCase())) {
-                opt.click();
-                UI.logSwap(`✅ Receive 选择了 ${symbol} (${targetChain}链)`);
-                chainSelected = true;
-                return true;
-              }
-            }
-          }
-
-          // 如果没有找到匹配的链，显示详细错误信息并停止
-          if (!chainSelected) {
-            UI.logSwap(`❌ 未找到您选择的链`);
-            UI.logSwap(`📋 您选择的链: ${targetChain || '无'}`);
-            UI.logSwap(`📋 可用链: ${availableChains.join(', ') || '无'}`);
-            UI.logSwap(`💡 请在控制面板中重新选择链或稍后重试`);
-    return false;
   }
-
-  async function selectExistingToken() {
-    // 在当前页面上查找已有的代币，优先KOGE，其次USDT
-    const allTokens = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group');
-    
-    for (const token of ['KOGE', 'USDT']) {
-      for (const row of allTokens) {
-        const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
-        const symbol = symbolEl?.innerText?.trim();
-        
-        if (symbol === token) {
-          UI.logSwap(`✅ 发现已持有 ${token}，点击选择`);
-          row.click(); // 直接点击选择
-          return token;
-        }
-      }
-    }
-    
-    UI.logSwap("⚠️ 未找到已持有的代币");
-    return null;
-  }
-      }
-    }
-    
-    UI.logSwap("⚠️ 未找到已持有的代币");
-    return null;
-  }
-
-  UI.logSwap(`⚠️ 未找到 ${targetToken}`);
-  return false;
-}
 
   async function selectKogeFromSaved() {
     try {
