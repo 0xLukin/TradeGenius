@@ -1464,7 +1464,8 @@
 
   async function selectKogeFromSaved() {
     try {
-      UI.logSwap("🔍 开始搜索 KOGE...");
+      const targetToken = selectedPair.to; // USDT
+      UI.logSwap(`🔍 开始搜索 ${targetToken}...`);
 
       // 查找并点击Favorites/Saved标签
       const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div, [role="dialog"] button');
@@ -1484,30 +1485,30 @@
 
       await sleep(800);
 
-      // 直接在当前页面查找所有代币行
+      // 查找目标代币（USDT）
       const allRows = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group, [role="dialog"] button[class*="cursor"]');
       
-      // 先搜索KOGE
-      let kogeRow = null;
+      let targetRow = null;
       for (const row of allRows) {
         const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
         const symbol = symbolEl?.innerText?.trim();
         
-        if (symbol === 'KOGE') {
-          kogeRow = row;
+        if (symbol === targetToken) {
+          targetRow = row;
+          UI.logSwap(`  找到 ${targetToken} 行`);
           break;
         }
       }
 
       // 如果没找到，尝试搜索框
-      if (!kogeRow) {
+      if (!targetRow) {
         const searchInput = document.querySelector('input[placeholder*="Search" i], input[type="text"]');
         if (searchInput) {
           searchInput.click();
           searchInput.focus();
-          searchInput.value = 'KOGE';
+          searchInput.value = targetToken;
           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          UI.logSwap("🔍 搜索 KOGE...");
+          UI.logSwap(`🔍 搜索 ${targetToken}...`);
           await sleep(1500);
           
           // 再次查找
@@ -1516,94 +1517,54 @@
             const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
             const symbol = symbolEl?.innerText?.trim();
             
-            if (symbol === 'KOGE') {
-              kogeRow = row;
+            if (symbol === targetToken) {
+              targetRow = row;
+              UI.logSwap(`  搜索后找到 ${targetToken}`);
               break;
             }
           }
         }
       }
 
-      if (kogeRow) {
-        UI.logSwap(`✅ 找到 KOGE，尝试点击...`);
+      if (targetRow) {
+        UI.logSwap(`✅ 找到 ${targetToken}，点击选择...`);
         
-        // 使用用户提供的确切选择器
-        const exactRow = document.querySelector('#radix-\\:r19\\: > div > div.flex.flex-col > div.w-full.h-\\[350px\\] > div > div > div > div > div');
+        // 点击代币行
+        targetRow.click();
+        await sleep(SWAP_CONFIG.waitAfterChoose);
         
-        if (exactRow) {
-          UI.logSwap(`✅ 使用确切选择器找到KOGE行`);
-          
-          // 尝试多种点击方式
-          let clicked = false;
-          
-          // 方式1：直接点击
-          try {
-            exactRow.click();
-            UI.logSwap(`  方式1: 直接点击`);
-            clicked = true;
-          } catch (e) {
-            UI.logSwap(`  方式1 失败: ${e.message}`);
-          }
-          
-          // 方式2：dispatchEvent
-          if (!clicked) {
-            try {
-              exactRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-              UI.logSwap(`  方式2: dispatchEvent`);
-              clicked = true;
-            } catch (e) {
-              UI.logSwap(`  方式2 失败: ${e.message}`);
+        // 选择BNB链
+        const chainMenu = document.querySelector('.genius-shadow, [class*="chain"]');
+        if (chainMenu) {
+          const chainOptions = chainMenu.querySelectorAll('.cursor-pointer, button');
+          for (const opt of chainOptions) {
+            const chainName = opt.querySelector('span')?.innerText?.trim();
+            if (chainName && (chainName.includes('BNB') || chainName.includes('Binance'))) {
+              opt.click();
+              UI.logSwap(`✅ Receive 选择了 ${targetToken} (BNB链)`);
+              return true;
             }
           }
           
-          // 方式3：点击row内的span或div
-          if (!clicked) {
-            const clickable = exactRow.querySelector('span, div');
-            if (clickable) {
-              clickable.click();
-              UI.logSwap(`  方式3: 点击span`);
-              clicked = true;
-            }
-          }
-          
-          await sleep(SWAP_CONFIG.waitAfterChoose);
-          
-          if (clicked) {
-            UI.logSwap(`✅ KOGE 点击成功（仅BNB链）`);
+          // 如果没找到BNB，选择第一个
+          if (chainOptions.length > 0) {
+            const firstChain = chainOptions[0].innerText?.trim() || '第一个';
+            UI.logSwap(`⚠️ 未找到 BNB，选择 ${firstChain}`);
+            chainOptions[0].click();
+            await sleep(500);
             return true;
           }
         }
         
-        // 如果确切选择器失败，回退到原逻辑
-        UI.logSwap(`⚠️ 确切选择器未找到，回退到普通逻辑`);
-        
-        let clicked = false;
-        try {
-          kogeRow.click();
-          clicked = true;
-        } catch (e) {}
-        
-        if (!clicked) {
-          kogeRow.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          clicked = true;
-        }
-        
-        await sleep(SWAP_CONFIG.waitAfterChoose);
-        
-        if (clicked) {
-          UI.logSwap(`✅ KOGE 点击成功（仅BNB链）`);
-          return true;
-        } else {
-          UI.logSwap(`❌ KOGE 点击失败`);
-          return false;
-        }
+        UI.logSwap(`✅ Receive 直接选择了 ${targetToken}`);
+        return true;
       }
 
-      UI.logSwap("❌ 未找到 KOGE");
+      UI.logSwap(`❌ 未找到 ${targetToken}`);
       return false;
 
     } catch (error) {
-      UI.logSwap("❌ 搜索 KOGE 时出错: " + error.message);
+      UI.logSwap(`❌ 搜索 ${selectedPair.to} 时出错: ${error.message}`);
       return false;
     }
   }
