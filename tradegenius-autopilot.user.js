@@ -56,7 +56,7 @@
     const r = s % 60;
     return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
   };
-  
+
   // 检测操作系统工具函数
   const isMacOS = () => navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
@@ -158,25 +158,25 @@
 
     setSwapRunning(running) {
       if (!this.root) return;
-      
+
       // 更新状态点
       if (this.swapStatusDot) {
         const color = running ? '#16a34a' : '#dc2626';
         this.swapStatusDot.style.background = color;
         this.swapStatusDot.style.boxShadow = `0 0 10px ${color}80`;
       }
-      
+
       // 更新状态文本
       if (this.swapStatusText) {
         this.swapStatusText.textContent = running ? 'RUNNING' : 'STOPPED';
         this.swapStatusText.style.color = running ? '#22c55e' : '#ef4444';
       }
-      
+
       // 更新按钮
       if (this.swapBtnToggle) {
         const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
         this.swapBtnToggle.textContent = running ? `Stop (${shortcut})` : `Start (${shortcut})`;
-        
+
         if (running) {
           this.swapBtnToggle.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
           this.swapBtnToggle.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
@@ -195,25 +195,25 @@
 
     renderRefresh(nextAt) {
       const isOn = refreshEnabled;
-      
+
       // 更新状态点
       if (this.refreshDot) {
         const color = isOn ? '#16a34a' : '#dc2626';
         this.refreshDot.style.background = color;
         this.refreshDot.style.boxShadow = `0 0 10px ${color}80`;
       }
-      
+
       // 更新状态文本
       if (this.refreshStatus) {
         this.refreshStatus.textContent = isOn ? 'RUNNING' : 'PAUSED';
         this.refreshStatus.style.color = isOn ? '#22c55e' : '#ef4444';
       }
-      
+
       // 更新按钮
       if (this.refreshBtnToggle) {
         const refreshShortcut = isMacOS() ? 'F2' : 'Ctrl+Alt+R';
         this.refreshBtnToggle.textContent = isOn ? `Pause (${refreshShortcut})` : `Resume (${refreshShortcut})`;
-        
+
         if (isOn) {
           this.refreshBtnToggle.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
           this.refreshBtnToggle.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
@@ -224,7 +224,7 @@
       }
 
       const at = nextAt ?? Number(localStorage.getItem(REFRESH_CONFIG.KEY_NEXT_AT) || 0);
-      
+
       // 更新状态卡片
       if (this.refreshNextEl) {
         const nextElement = this.refreshNextEl.querySelector('div:last-child');
@@ -244,7 +244,7 @@
 
     renderPairSelection() {
       if (!this.pairContainer) return;
-      
+
       this.pairContainer.innerHTML = '';
 
       PAIR_CONFIG.SUPPORTED_PAIRS.forEach(pair => {
@@ -257,39 +257,39 @@
           transition: all 0.2s ease; font-size: 11px; font-weight: 500;
           color: ${selectedPair?.name === pair.name ? '#f1f5f9' : '#94a3b8'};
         `;
-        
+
         const radio = document.createElement('input');
         radio.type = 'radio';
         radio.name = 'pair-selection'; // 单选必须有相同的name
         radio.checked = selectedPair?.name === pair.name;
         radio.style.cssText = `margin:0; cursor:pointer; opacity: 0; position: absolute;`;
-        
+
         const span = document.createElement('span');
         span.style.cssText = `
           display: flex; align-items: center; gap: 4px;
         `;
-        
+
         // 添加交易对图标
         const pairIcon = document.createElement('span');
-      const pairColors = {
-      'USDT/USDC': '#10b981',
-      'KOGE/USDT': '#f59e0b'
-    };
+        const pairColors = {
+          'USDT/USDC': '#10b981',
+          'KOGE/USDT': '#f59e0b'
+        };
         pairIcon.style.cssText = `
           width: 8px; height: 8px; border-radius: 50%; 
           background: ${pairColors[pair.name] || '#94a3b8'};
           box-shadow: 0 0 6px ${pairColors[pair.name] || '#94a3b8'}40;
         `;
-        
+
         const pairText = document.createElement('span');
         pairText.textContent = pair.name;
-        
+
         span.appendChild(pairIcon);
         span.appendChild(pairText);
-        
+
         label.appendChild(radio);
         label.appendChild(span);
-        
+
         // 悬停效果
         label.addEventListener('mouseenter', () => {
           if (selectedPair?.name !== pair.name) {
@@ -303,7 +303,7 @@
             label.style.borderColor = 'rgba(255, 255, 255, 0.1)';
           }
         });
-        
+
         radio.addEventListener('change', () => {
           if (radio.checked) {
             selectedPair = pair;
@@ -311,7 +311,7 @@
             selectedToToken = pair.to;
             savePairConfig();
             UI.logSwap(`交易对更新: ${pair.name}`);
-            
+
             // 如果选择了KOGE/USDT，强制选择BNB链
             if (pair.name === 'KOGE/USDT' && selectedChains[0] !== 'BNB') {
               selectedChains = ['BNB'];
@@ -319,19 +319,19 @@
               UI.renderChainSelection();
               UI.logSwap(`KOGE/USDT 自动选择 BNB 链`);
             }
-            
+
             // 重新渲染所有交易对选项以更新选中状态
             this.renderPairSelection();
           }
         });
-        
+
         this.pairContainer.appendChild(label);
       });
     },
 
     renderChainSelection() {
       if (!this.chainCheckboxContainer) return;
-      
+
       this.chainCheckboxContainer.innerHTML = '';
 
       CHAIN_CONFIG.SUPPORTED_CHAINS.forEach(chain => {
@@ -344,23 +344,23 @@
           transition: all 0.2s ease; font-size: 11px; font-weight: 500;
           color: ${selectedChains.includes(chain) ? '#f1f5f9' : '#94a3b8'};
         `;
-        
+
         const radio = document.createElement('input');
         radio.type = 'radio';
         radio.name = 'chain-selection'; // 单选必须有相同的name
         radio.checked = selectedChains.includes(chain);
         radio.style.cssText = `margin:0; cursor:pointer; opacity: 0; position: absolute;`;
-        
+
         const span = document.createElement('span');
         span.style.cssText = `
           display: flex; align-items: center; gap: 4px;
         `;
-        
+
         // 添加链图标
         const chainIcon = document.createElement('span');
         const iconColors = {
           'BNB': '#f59e0b',
-          'OP': '#ef4444', 
+          'OP': '#ef4444',
           'SOL': '#8b5cf6'
         };
         chainIcon.style.cssText = `
@@ -368,16 +368,16 @@
           background: ${iconColors[chain] || '#94a3b8'};
           box-shadow: 0 0 6px ${iconColors[chain] || '#94a3b8'}40;
         `;
-        
+
         const chainText = document.createElement('span');
         chainText.textContent = chain;
-        
+
         span.appendChild(chainIcon);
         span.appendChild(chainText);
-        
+
         label.appendChild(radio);
         label.appendChild(span);
-        
+
         // 悬停效果
         label.addEventListener('mouseenter', () => {
           if (!selectedChains.includes(chain)) {
@@ -391,7 +391,7 @@
             label.style.borderColor = 'rgba(255, 255, 255, 0.1)';
           }
         });
-        
+
         radio.addEventListener('change', () => {
           if (radio.checked) {
             selectedChains = [chain]; // 单选，只保存一个链
@@ -401,7 +401,7 @@
             this.renderChainSelection();
           }
         });
-        
+
         this.chainCheckboxContainer.appendChild(label);
       });
     },
@@ -413,41 +413,41 @@
         collapseBtn: !!this.collapseBtn,
         currentCollapsed: isPanelCollapsed
       });
-      
+
       if (!this.root || !this.mainContent) {
         console.error('Missing UI elements for panel toggle');
         return;
       }
-      
+
       isPanelCollapsed = !isPanelCollapsed;
       console.log('New collapsed state:', isPanelCollapsed);
-      
+
       try {
-      if (isPanelCollapsed) {
-        // 折叠状态：只显示最小信息
-        this.mainContent.style.display = 'none';
-        this.root.style.width = '200px';
-        this.root.style.height = 'auto';
-        if (this.collapseBtn) {
-          this.collapseBtn.textContent = '◀';
-          this.collapseBtn.style.background = 'rgba(16, 185, 129, 0.2)';
-          this.collapseBtn.style.color = '#10b981';
-        }
-        
-        // 显示简要状态
-        const miniStatus = document.createElement('div');
-        miniStatus.id = 'mini-status';
-        miniStatus.style.cssText = `
+        if (isPanelCollapsed) {
+          // 折叠状态：只显示最小信息
+          this.mainContent.style.display = 'none';
+          this.root.style.width = '200px';
+          this.root.style.height = 'auto';
+          if (this.collapseBtn) {
+            this.collapseBtn.textContent = '◀';
+            this.collapseBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+            this.collapseBtn.style.color = '#10b981';
+          }
+
+          // 显示简要状态
+          const miniStatus = document.createElement('div');
+          miniStatus.id = 'mini-status';
+          miniStatus.style.cssText = `
           padding: 12px 16px; text-align:center; font-size:10px; line-height:1.4;
           background: rgba(0,0,0,0.2);
         `;
-        
-        const swapStatus = this.swapStatusText?.textContent || 'STOPPED';
-        const swapColor = swapStatus === 'RUNNING' ? '#22c55e' : '#ef4444';
-        const refreshStatus = this.refreshStatus?.textContent || 'PAUSED';
-        const refreshColor = refreshStatus === 'RUNNING' ? '#22c55e' : '#ef4444';
-        
-        miniStatus.innerHTML = `
+
+          const swapStatus = this.swapStatusText?.textContent || 'STOPPED';
+          const swapColor = swapStatus === 'RUNNING' ? '#22c55e' : '#ef4444';
+          const refreshStatus = this.refreshStatus?.textContent || 'PAUSED';
+          const refreshColor = refreshStatus === 'RUNNING' ? '#22c55e' : '#ef4444';
+
+          miniStatus.innerHTML = `
           <div style="font-weight:600; margin-bottom:8px; color: #f1f5f9; font-size:11px;">
             TradeGenius Bot
           </div>
@@ -465,28 +465,28 @@
             按 T/F3 展开面板
           </div>
         `;
-        
-        // 移除旧的迷你状态（如果存在）
-        const oldMini = document.getElementById('mini-status');
-        if (oldMini) oldMini.remove();
-        
-        this.root.appendChild(miniStatus);
-        console.log('Panel collapsed successfully');
-      } else {
-        // 展开状态：显示完整内容
-        this.mainContent.style.display = 'block';
-        this.root.style.width = '320px';
-        if (this.collapseBtn) {
-          this.collapseBtn.textContent = '▶';
-          this.collapseBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-          this.collapseBtn.style.color = 'rgba(255, 255, 255, 0.9)';
+
+          // 移除旧的迷你状态（如果存在）
+          const oldMini = document.getElementById('mini-status');
+          if (oldMini) oldMini.remove();
+
+          this.root.appendChild(miniStatus);
+          console.log('Panel collapsed successfully');
+        } else {
+          // 展开状态：显示完整内容
+          this.mainContent.style.display = 'block';
+          this.root.style.width = '320px';
+          if (this.collapseBtn) {
+            this.collapseBtn.textContent = '▶';
+            this.collapseBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            this.collapseBtn.style.color = 'rgba(255, 255, 255, 0.9)';
+          }
+
+          // 移除迷你状态
+          const miniStatus = document.getElementById('mini-status');
+          if (miniStatus) miniStatus.remove();
+          console.log('Panel expanded successfully');
         }
-        
-        // 移除迷你状态
-        const miniStatus = document.getElementById('mini-status');
-        if (miniStatus) miniStatus.remove();
-        console.log('Panel expanded successfully');
-      }
       } catch (error) {
         console.error('Error during panel toggle:', error);
       }
@@ -629,7 +629,7 @@
 
     // 检测操作系统显示正确的快捷键
     const swapShortcut = isMacOS() ? 'Start (F1)' : 'Start (Ctrl+Alt+S)';
-    
+
     const swapBtn = document.createElement('button');
     swapBtn.textContent = swapShortcut;
     swapBtn.style.cssText = `
@@ -949,10 +949,10 @@
       border-top: 1px solid rgba(255,255,255,0.08);
     `;
 
-    const shortcuts = isMacOS() ? 
-      'F1 (Bot) F2 (Refresh) T/F3 (Toggle)' : 
+    const shortcuts = isMacOS() ?
+      'F1 (Bot) F2 (Refresh) T/F3 (Toggle)' :
       'Ctrl+Alt+S (Bot) Ctrl+Alt+R (Refresh) T/F3 (Toggle)';
-    
+
     const refreshTip = document.createElement('div');
     refreshTip.style.cssText = `
       font-size: 10px; opacity: 0.7; line-height: 1.4;
@@ -977,7 +977,7 @@
     swapSection.appendChild(swapBody);
     refreshSection.appendChild(refreshHeader);
     refreshSection.appendChild(refreshBody);
-    
+
     mainContent.appendChild(swapSection);
     mainContent.appendChild(refreshSection);
 
@@ -1038,7 +1038,7 @@
         altKey: e.altKey,
         isMac: isMac
       });
-      
+
       // PC用户：Ctrl + Alt 组合键
       if (!isMac) {
         // Ctrl + Alt + S: Toggle Swap Bot
@@ -1054,35 +1054,35 @@
           toggleRefresh();
         }
       }
-        // T: Toggle Panel (仅当焦点不在输入框时)
-        if (e.key === 't' || e.key === 'T') {
-          const activeElement = document.activeElement;
-          const isInputFocused = activeElement && (
-            activeElement.tagName === 'INPUT' || 
-            activeElement.tagName === 'TEXTAREA' || 
-            activeElement.contentEditable === 'true'
-          );
-          
-          console.log('T key pressed, inputFocused:', isInputFocused);
-          
-          if (!isInputFocused) {
-            e.preventDefault();
-            try {
-              console.log('Toggle panel triggered');
-              UI.togglePanel();
-            } catch (error) {
-              console.error('Toggle panel error:', error);
-            }
+      // T: Toggle Panel (仅当焦点不在输入框时)
+      if (e.key === 't' || e.key === 'T') {
+        const activeElement = document.activeElement;
+        const isInputFocused = activeElement && (
+          activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.contentEditable === 'true'
+        );
+
+        console.log('T key pressed, inputFocused:', isInputFocused);
+
+        if (!isInputFocused) {
+          e.preventDefault();
+          try {
+            console.log('Toggle panel triggered');
+            UI.togglePanel();
+          } catch (error) {
+            console.error('Toggle panel error:', error);
           }
         }
+      }
 
-        // Ctrl/Cmd + Shift + R: 保存状态并立即刷新（用于测试）
-        if ((isMac ? e.metaKey : e.ctrlKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
-          e.preventDefault();
-          UI.logSwap('🔄 手动保存状态并刷新...');
-          localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, isSwapRunning ? '1' : '0');
-          setTimeout(() => location.reload(), 100);
-        }
+      // Ctrl/Cmd + Shift + R: 保存状态并立即刷新（用于测试）
+      if ((isMac ? e.metaKey : e.ctrlKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
+        e.preventDefault();
+        UI.logSwap('🔄 手动保存状态并刷新...');
+        localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, isSwapRunning ? '1' : '0');
+        setTimeout(() => location.reload(), 100);
+      }
 
       // F1-F3 快捷键（所有用户）
       // F1: Toggle Swap Bot
@@ -1224,22 +1224,22 @@
     try {
       // 在当前页面上查找已有的代币，优先KOGE，其次USDT
       const allTokens = document.querySelectorAll('[role="dialog"] .cursor-pointer, [role="dialog"] .relative.group');
-      
+
       UI.logSwap(`🔍 在对话框中查找代币，找到 ${allTokens.length} 个元素`);
-      
+
       for (const token of ['KOGE', 'USDT']) {
         for (const row of allTokens) {
           const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60, .text-sm.text-genius-cream');
           const symbol = symbolEl?.innerText?.trim();
-          
+
           UI.logSwap(`  检查: ${symbol}`);
-          
+
           if (symbol === token) {
             UI.logSwap(`✅ 发现已持有 ${token}，尝试点击...`);
-            
+
             // 尝试多种点击方式
             let clicked = false;
-            
+
             // 方式1：直接点击row
             try {
               row.click();
@@ -1248,7 +1248,7 @@
             } catch (e) {
               UI.logSwap(`  方式1 失败: ${e.message}`);
             }
-            
+
             // 方式2：dispatchEvent
             if (!clicked) {
               try {
@@ -1259,7 +1259,7 @@
                 UI.logSwap(`  方式2 失败: ${e.message}`);
               }
             }
-            
+
             // 方式3：点击row内的元素
             if (!clicked) {
               const clickable = row.querySelector('span, div, button');
@@ -1269,9 +1269,9 @@
                 clicked = true;
               }
             }
-            
+
             await sleep(500);
-            
+
             if (clicked) {
               UI.logSwap(`✅ ${token} 点击成功`);
               return token;
@@ -1282,7 +1282,7 @@
           }
         }
       }
-      
+
       UI.logSwap("⚠️ 未找到已持有的代币");
       return null;
     } catch (error) {
@@ -1301,10 +1301,10 @@
       }
 
       const targetChain = selectedChains[0]; // 获取用户选择的链
-      
+
       let targetToken;
       let shouldSkipSearch = false;
-      
+
       if (selectedPair.name === 'KOGE/USDT') {
         // KOGE/USDT: 自动选择当前已有的代币（优先KOGE，其次USDT）
         UI.logSwap(`🔍 KOGE/USDT 模式：查找已持有的代币`);
@@ -1322,13 +1322,13 @@
       } else if (selectedPair.name === 'USDT/USDC') {
         // USDT/USDC: 先尝试直接在现有列表中查找 USDT 或 USDC
         UI.logSwap(`🔍 USDT/USDC 模式：先在现有列表中查找代币`);
-        
+
         // 在当前对话框中查找 USDT 或 USDC（优先 USDT，其次 USDC）
         const tokenRows = document.querySelectorAll('[role="dialog"] .cursor-pointer');
         let maxBalance = -1;
         let targetRow = null;
         let foundToken = null;
-        
+
         // 优先查找 USDT，其次 USDC
         for (const preferToken of ['USDT', 'USDC']) {
           for (const row of tokenRows) {
@@ -1354,14 +1354,14 @@
           // 如果已找到有余额的代币，就不再继续查找
           if (targetRow) break;
         }
-        
+
         if (targetRow && foundToken) {
           targetRow.click();
           selectedFromToken = foundToken;
           UI.logSwap(`✅ From 直接选择了 ${foundToken} (余额: ${maxBalance})`);
           return true;
         }
-        
+
         // 如果列表中没找到，回退到选择链的方式
         UI.logSwap(`⚠️ 现有列表中未找到 USDT/USDC，回退到选择链方式`);
         targetToken = selectedPair.from;
@@ -1376,7 +1376,7 @@
       }
 
       UI.logSwap(`目标链: ${targetChain}，开始查找 ${targetToken}`);
-      
+
       // USDT/USDC 逻辑：点击 All 标签，然后选择链
       const tabs = document.querySelectorAll('[role="dialog"] .flex.flex-row.gap-3 > div');
       let allTab = null;
@@ -1436,7 +1436,7 @@
 
       UI.logSwap(`⚠️ 在 ${targetChain} 链上未找到 ${targetToken}`);
       return false;
-      
+
     } catch (error) {
       UI.logSwap(`❌ selectMaxBalanceToken 错误: ${error.message}`);
       return false;
@@ -1465,9 +1465,17 @@
         }
       }
 
-      // USDT/USDC: 使用 Stable 标签逻辑
-      const targetToken = selectedPair.to;
-      UI.logSwap(`From 是 ${selectedPair.from}，Receive 选择 ${targetToken}`);
+      // USDT/USDC: 根据实际选择的 from 决定 receive
+      // 如果 from 是 USDC，receive 选择 USDT；如果 from 是 USDT，receive 选择 USDC
+      let targetToken;
+      if (selectedFromToken === 'USDC') {
+        targetToken = 'USDT';
+      } else if (selectedFromToken === 'USDT') {
+        targetToken = 'USDC';
+      } else {
+        targetToken = selectedPair.to; // 默认使用配置的 to
+      }
+      UI.logSwap(`From 是 ${selectedFromToken}，Receive 选择 ${targetToken}`);
       UI.logSwap(`目标链: ${selectedChains[0] || '未选择'}`);
 
       return await selectUSDTFromStable(targetToken);
@@ -1513,8 +1521,8 @@
           if (targetChain) {
             for (const opt of chainOptions) {
               const chainName = opt.querySelector('span')?.innerText?.trim();
-              if (CHAIN_CONFIG.CHAIN_ALIASES[targetChain].some(alias => 
-                  chainName?.toLowerCase() === alias.toLowerCase())) {
+              if (CHAIN_CONFIG.CHAIN_ALIASES[targetChain].some(alias =>
+                chainName?.toLowerCase() === alias.toLowerCase())) {
                 opt.click();
                 UI.logSwap(`✅ Receive 选择了 ${symbol} (${targetChain}链)`);
                 return true;
@@ -1598,7 +1606,7 @@
 
     if (targetRow) {
       UI.logSwap(`✅ 找到 ${targetToken}，点击选择...`);
-      
+
       // 使用确切选择器点击 KOGE
       const exactRow = document.querySelector("#radix-\\:r19\\: > div > div.flex.flex-col > div.w-full.h-\\[350px\\] > div > div > div > div:nth-child(1) > div");
       if (exactRow) {
@@ -1606,7 +1614,7 @@
         UI.logSwap(`✅ Receive 使用确切选择器选择了 ${targetToken}`);
         return true;
       }
-      
+
       targetRow.click();
       UI.logSwap(`✅ Receive 直接选择了 ${targetToken}`);
       return true;
@@ -1627,7 +1635,7 @@
     // 运行时保存状态
     localStorage.setItem(REFRESH_CONFIG.KEY_SWAP_RUNNING, '1');
 
-    UI.logSwap(`🚀 Bot started. 区间: ${SWAP_CONFIG.waitRandomMin/1000}s - ${SWAP_CONFIG.waitRandomMax/1000}s`);
+    UI.logSwap(`🚀 Bot started. 区间: ${SWAP_CONFIG.waitRandomMin / 1000}s - ${SWAP_CONFIG.waitRandomMax / 1000}s`);
 
     await sleep(SWAP_CONFIG.waitBeforeStart);
 
@@ -1849,7 +1857,7 @@
     mountUI();
     if (refreshEnabled) scheduleRefresh();
     else UI.renderRefresh();
-    
+
     // 检查并恢复swap运行状态
     const savedSwapRunning = localStorage.getItem(REFRESH_CONFIG.KEY_SWAP_RUNNING) === '1';
     if (savedSwapRunning) {
@@ -1859,7 +1867,7 @@
         window.startBot();
       }, 2000);
     }
-    
+
     const shortcut = isMacOS() ? 'F1' : 'Ctrl+Alt+S';
     UI.logSwap(`Loaded. 交易对: ${selectedPair?.name || '未选择'}, 链: ${selectedChains[0] || '未选择'}. Click Start or press ${shortcut}.`);
   }
