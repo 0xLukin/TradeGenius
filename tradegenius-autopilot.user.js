@@ -1319,8 +1319,54 @@
           UI.logSwap("⚠️ 未找到已持有的代币，尝试默认 KOGE");
           targetToken = 'KOGE';
         }
+      } else if (selectedPair.name === 'USDT/USDC') {
+        // USDT/USDC: 先尝试直接在现有列表中查找 USDT 或 USDC
+        UI.logSwap(`🔍 USDT/USDC 模式：先在现有列表中查找代币`);
+        
+        // 在当前对话框中查找 USDT 或 USDC（优先 USDT，其次 USDC）
+        const tokenRows = document.querySelectorAll('[role="dialog"] .cursor-pointer');
+        let maxBalance = -1;
+        let targetRow = null;
+        let foundToken = null;
+        
+        // 优先查找 USDT，其次 USDC
+        for (const preferToken of ['USDT', 'USDC']) {
+          for (const row of tokenRows) {
+            const symbolEl = row.querySelector('.text-xs.text-genius-cream\\/60');
+            const symbol = symbolEl?.innerText?.trim();
+
+            if (symbol === preferToken) {
+              const balanceText = row.querySelector('.flex.flex-nowrap.justify-end')?.innerText || '';
+              const balanceMatch = balanceText.match(/[\d,\.]+/);
+              if (balanceMatch) {
+                const balance = parseFloat(balanceMatch[0].replace(/,/g, ''));
+                if (balance > 0) {
+                  UI.logSwap(`发现 ${symbol}: ${balance}`);
+                  if (balance > maxBalance) {
+                    maxBalance = balance;
+                    targetRow = row;
+                    foundToken = symbol;
+                  }
+                }
+              }
+            }
+          }
+          // 如果已找到有余额的代币，就不再继续查找
+          if (targetRow) break;
+        }
+        
+        if (targetRow && foundToken) {
+          targetRow.click();
+          selectedFromToken = foundToken;
+          UI.logSwap(`✅ From 直接选择了 ${foundToken} (余额: ${maxBalance})`);
+          return true;
+        }
+        
+        // 如果列表中没找到，回退到选择链的方式
+        UI.logSwap(`⚠️ 现有列表中未找到 USDT/USDC，回退到选择链方式`);
+        targetToken = selectedPair.from;
       } else {
-        // USDT/USDC: 使用原有的逻辑
+        // 其他交易对: 使用原有的逻辑
         targetToken = selectedPair.from;
       }
 
